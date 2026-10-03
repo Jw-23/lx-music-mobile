@@ -584,5 +584,6 @@
   "library_cover": "Artwork",
   "library_lyrics": "Lyrics",
   "version_release_source": "Updates: Jw-23/lx-music-mobile · GitHub Releases",
-  "version_check_now": "Check for Updates"
+  "version_check_now": "Check for Updates",
+  "library_lyric_seek_hint": "Seek to this lyric line"
 }

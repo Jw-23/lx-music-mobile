@@ -226,9 +226,10 @@ function lyricScroll() {
     useCallback: (fn, deps) => { const i = cursor++; if (changed(slots[i]?.deps, deps)) slots[i] = { fn, deps }; return slots[i].fn },
     useEffect: (fn, deps) => { const i = cursor++; if (changed(slots[i]?.deps, deps)) { slots[i] = { deps }; effects.push(() => { cleanups[i]?.(); cleanups[i] = fn() }) } },
   }
+  const seeks = []
   const hook = load('src/screens/PlayDetail/components/useLyricScroll.ts', {
     react, 'react-native': { AccessibilityInfo: { isReduceMotionEnabled: async() => false, addEventListener: () => ({ remove() {} }) } },
-  }, { setTimeout: schedule, clearTimeout: cancel, requestAnimationFrame: schedule, cancelAnimationFrame: cancel, global: { app_event: { setProgress() {} } } })
+  }, { setTimeout: schedule, clearTimeout: cancel, requestAnimationFrame: schedule, cancelAnimationFrame: cancel, global: { app_event: { setProgress: time => seeks.push(time) } } })
   const commands = []
   const lines = Array.from({ length: 100 }, (_, i) => ({ text: String(i), time: i * 1000, extendedLyrics: [] }))
   let result
@@ -250,7 +251,7 @@ function lyricScroll() {
     }
     clock = target
   }
-  return { render, commands, advance, timers, cleanup: () => cleanups.forEach(cleanup => cleanup?.()) }
+  return { render, commands, advance, timers, seeks, lines, cleanup: () => cleanups.forEach(cleanup => cleanup?.()) }
 }
 test('lyrics follow immediately through native animation and wait until momentum ends before resuming', () => {
   const h = lyricScroll()
@@ -301,4 +302,115 @@ test('removing the normal queue anchor while a priority song plays resumes at th
   assert.equal((await p.player.getNextPlayMusicInfo()).musicInfo.id, 'b')
   await p.player.playNext()
   assert.equal(p.state.playMusicInfo.musicInfo.id, 'b')
+})
+
+test('tapping a lyric seeks in seconds even when the drag progress overlay is disabled', () => {
+  const h = lyricScroll()
+  const scroll = h.render(0)
+  h.advance(0)
+  scroll.onSeekLine(42)
+  assert.deepEqual(h.seeks, [42])
+  scroll.onSeekLine(-1)
+  scroll.onSeekLine(999)
+  h.lines[1].time = NaN
+  scroll.onSeekLine(1)
+  assert.deepEqual(h.seeks, [42])
+  h.cleanup()
+})
+test('dragging and momentum do not seek accidentally or let follow take over before release', () => {
+  const h = lyricScroll()
+  const scroll = h.render(1)
+  h.advance(0)
+  h.commands.length = 0
+  scroll.scrollProps.onScrollBeginDrag()
+  scroll.scrollProps.onMomentumScrollEnd()
+  scroll.onSeekLine(40)
+  h.render(2)
+  h.advance(6000)
+  assert.equal(h.commands.length, 0)
+  assert.equal(h.seeks.length, 0)
+  scroll.scrollProps.onScrollEndDrag()
+  scroll.scrollProps.onMomentumScrollBegin()
+  scroll.onSeekLine(40)
+  h.advance(6000)
+  assert.equal(h.seeks.length, 0)
+  scroll.scrollProps.onMomentumScrollEnd()
+  scroll.onSeekLine(40)
+  assert.deepEqual(h.seeks, [40])
+  assert.equal(h.timers.size, 0)
+  h.cleanup()
+})
+test('seeking lyrics synchronizes the timed highlight and preserves paused playback', () => {
+  const parserModule = { exports: {} }
+  vm.runInNewContext(fs.readFileSync(require.resolve('lrc-file-parser'), 'utf8'), {
+    module: parserModule,
+    window: { requestAnimationFrame: () => 1, cancelAnimationFrame() {}, clearTimeout() {} },
+  })
+  const Lyric = parserModule.exports
+  const callbacks = []
+  const parser = new Lyric({ offset: 0, onPlay: (line, text) => callbacks.push({ line, text }) })
+  parser.setLyric('[00:00.00]Start\n[00:10.00]Middle\n[00:20.00]End')
+  const state = { isPlay: false }
+  const core = load('src/core/lyric.ts', {
+    '@/plugins/lyric': { play: time => parser.play(time), pause: () => parser.pause() },
+    '@/core/desktopLyric': { playDesktopLyric: async() => {}, pauseDesktopLyric: async() => {} },
+    '@/plugins/player': {}, '@/store/player/state': { default: state }, '@/store/setting/state': {}, '@/plugins/player/utils': {},
+  })
+  core.seek(10.1)
+  assert.equal(callbacks.at(-1).text, 'Middle')
+  assert.equal(parser.isPlay, false)
+  assert.equal(state.isPlay, false)
+  state.isPlay = true
+  core.seek(0.1)
+  assert.equal(callbacks.at(-1).text, 'Start')
+  assert.equal(parser.isPlay, true)
+  parser.pause()
+  const count = callbacks.length
+  core.seek(NaN)
+  core.seek(-1)
+  assert.equal(callbacks.length, count)
+})
+function progressService(nativeSeek = async() => {}) {
+  const events = new Map()
+  const native = []
+  const lyrics = []
+  const positions = []
+  const state = { musicInfo: { id: 'song' }, progress: { maxPlayTime: 30 }, isPlay: false }
+  const init = load('src/core/init/player/playProgress.ts', {
+    '@/core/list': {}, '@/core/player/progress': { setNowPlayTime: time => positions.push(time), setMaxplayTime() {} },
+    '@/plugins/player': { setCurrentTime: time => { native.push(time); return nativeSeek(time) }, getPosition: async() => 4 },
+    '@/utils/common': {}, '@/utils/data': {}, '@/utils/tools': { throttleBackgroundTimer: () => () => {} },
+    'react-native-background-timer': {}, '@/store/player/state': { default: state }, '@/store/setting/state': {},
+    '@/utils/nativeModules/utils': { onScreenStateChange() {} }, 'react-native': { AppState: { addEventListener() {} } },
+    '@/core/lyric': { seek: time => lyrics.push(time) },
+  }, { global: { app_event: { on: (name, callback) => events.set(name, callback) }, state_event: { on() {} } } })
+  init.default()
+  return { seek: events.get('setProgress'), native, lyrics, positions, state }
+}
+test('lyric progress requests clamp to track duration and update audio and lyrics together', () => {
+  const service = progressService()
+  service.seek(10)
+  service.seek(100)
+  service.seek(-3)
+  service.seek(NaN)
+  assert.deepEqual(service.native, [10, 30, 0])
+  assert.deepEqual(service.lyrics, [10, 30, 0])
+  assert.deepEqual(service.positions, [10, 30, 0])
+  assert.equal(service.state.isPlay, false)
+})
+test('a failed seek restores the native position; an older failure cannot override a newer seek', async() => {
+  const tick = () => new Promise(resolve => setImmediate(resolve))
+  const failure = progressService(async() => { throw new Error('Seek failed') })
+  failure.seek(10)
+  await tick()
+  assert.deepEqual(failure.positions, [10, 4])
+  assert.deepEqual(failure.lyrics, [10, 4])
+  let fail
+  const racing = progressService(time => time === 10 ? new Promise((_resolve, reject) => { fail = reject }) : Promise.resolve())
+  racing.seek(10)
+  racing.seek(20)
+  fail(new Error('Older seek failed'))
+  await tick()
+  assert.deepEqual(racing.positions, [10, 20])
+  assert.deepEqual(racing.lyrics, [10, 20])
 })

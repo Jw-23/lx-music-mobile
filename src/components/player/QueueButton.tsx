@@ -54,7 +54,6 @@ export default () => {
   return <>
     <Pressable onPress={() => { dialog.current?.setVisible(true) }} accessibilityRole="button" accessibilityLabel={t('library_queue')} style={styles.open}>
       <Icon name="list-order" size={22} color={colors.accent} />
-      <Text size={13} color={colors.accent}>{t('library_queue')}</Text>
     </Pressable>
     <Dialog ref={dialog} title={t('library_queue')} height="80%">
       <Text size={13} color={colors.secondary} style={styles.hint}>{t('library_queue_hint')}</Text>
@@ -94,7 +93,7 @@ export default () => {
 }
 
 const styles = StyleSheet.create({
-  open: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  open: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   hint: { paddingHorizontal: 20, paddingVertical: 12 },
   row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 4, minHeight: 72, borderBottomWidth: StyleSheet.hairlineWidth },
   song: { flex: 1, minHeight: 64, justifyContent: 'center', gap: 4, paddingRight: 6 },

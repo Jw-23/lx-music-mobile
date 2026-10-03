@@ -51,6 +51,13 @@ export const handlePlay = (time: number) => {
   void playDesktopLyric(time)
 }
 
+/** Reposition lyrics without starting paused audio playback. Time is in seconds. */
+export const seek = (time: number) => {
+  if (!Number.isFinite(time) || time < 0) return
+  handlePlay(time * 1000)
+  if (!playerState.isPlay) pause()
+}
+
 /**
  * pause lyric
  */

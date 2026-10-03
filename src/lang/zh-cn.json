@@ -584,5 +584,6 @@
   "library_cover": "封面",
   "library_lyrics": "歌词",
   "version_release_source": "更新来源：Jw-23/lx-music-mobile · GitHub Releases",
-  "version_check_now": "检查更新"
+  "version_check_now": "检查更新",
+  "library_lyric_seek_hint": "跳转到这句歌词对应的播放进度"
 }

@@ -1,5 +1,5 @@
-import { memo, useState, useRef, useEffect } from 'react'
-import { View, AppState, Pressable } from 'react-native'
+import { memo, useRef, useEffect } from 'react'
+import { View, AppState } from 'react-native'
 
 import Header from './components/Header'
 // import Aside from './components/Aside'
@@ -11,20 +11,12 @@ import Lyric from './Lyric'
 import { screenkeepAwake, screenUnkeepAwake } from '@/utils/nativeModules/utils'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
-import { useDesignColors } from '@/theme/design'
-import { useI18n } from '@/lang'
-import Text from '@/components/common/Text'
 
 // global.iskeep = false
 export default memo(({ componentId }: { componentId: string }) => {
-  const colors = useDesignColors()
-  const t = useI18n()
-  const pager = useRef<PagerView>(null)
-  const [pageIndex, setPageIndex] = useState(0)
   const showLyricRef = useRef(false)
 
   const onPageSelected = ({ nativeEvent }: PagerViewOnPageSelectedEvent) => {
-    setPageIndex(nativeEvent.position)
     showLyricRef.current = nativeEvent.position == 1
     if (showLyricRef.current) {
       screenkeepAwake()
@@ -65,7 +57,6 @@ export default memo(({ componentId }: { componentId: string }) => {
       <Header />
       <View style={styles.container}>
         <PagerView
-          ref={pager}
           offscreenPageLimit={1}
           overdrag
           onPageSelected={onPageSelected}
@@ -79,9 +70,6 @@ export default memo(({ componentId }: { componentId: string }) => {
             <Lyric />
           </View>
         </PagerView>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-          {(['library_cover', 'library_lyrics'] as const).map((label, index) => <Pressable key={label} accessibilityRole="tab" accessibilityLabel={t(label)} accessibilityState={{ selected: pageIndex === index }} onPress={() => { pager.current?.setPage(index) }} style={{ minHeight: 44, paddingHorizontal: 20, justifyContent: 'center', borderRadius: 12, backgroundColor: pageIndex === index ? colors.secondarySurface : 'transparent' }}><Text size={13} color={pageIndex === index ? colors.accent : colors.secondary}>{t(label)}</Text></Pressable>)}
-        </View>
         <Player />
       </View>
     </>

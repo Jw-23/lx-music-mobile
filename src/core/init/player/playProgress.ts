@@ -9,6 +9,7 @@ import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import { onScreenStateChange } from '@/utils/nativeModules/utils'
 import { AppState } from 'react-native'
+import { seek as seekLyric } from '@/core/lyric'
 
 const delaySavePlayInfo = throttleBackgroundTimer(() => {
   void savePlayInfo({
@@ -23,6 +24,7 @@ export default () => {
   // const updateMusicInfo = useCommit('list', 'updateMusicInfo')
 
   let updateTimeout: number | null = null
+  let seekRevision = 0
 
   let isScreenOn = true
 
@@ -71,10 +73,19 @@ export default () => {
   }
 
   const setProgress = (time: number, maxTime?: number) => {
-    if (!playerState.musicInfo.id) return
-    // console.log('setProgress', time, maxTime)
+    if (!playerState.musicInfo.id || !Number.isFinite(time)) return
+    const duration = maxTime ?? playerState.progress.maxPlayTime
+    time = duration > 0 ? Math.min(duration, Math.max(0, time)) : Math.max(0, time)
     setNowPlayTime(time)
-    void setCurrentTime(time)
+    seekLyric(time)
+    const musicId = playerState.musicInfo.id
+    const revision = ++seekRevision
+    void setCurrentTime(time).catch(async() => {
+      const position = await getPosition()
+      if (revision !== seekRevision || musicId !== playerState.musicInfo.id || !Number.isFinite(position)) return
+      setNowPlayTime(position)
+      seekLyric(position)
+    }).catch(() => {})
 
     if (maxTime != null) setMaxplayTime(maxTime)
 
