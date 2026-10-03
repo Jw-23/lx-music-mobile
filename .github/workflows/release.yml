@@ -4,12 +4,21 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build and publish
+        required: true
+        type: string
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -20,6 +29,8 @@ jobs:
     steps:
       - name: Check out release tag
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Setup Env
         uses: ./.github/actions/setup
@@ -28,7 +39,7 @@ jobs:
         shell: bash
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          test "$GITHUB_REF_NAME" = "v$PACKAGE_VERSION"
+          test "$RELEASE_TAG" = "v$PACKAGE_VERSION"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
 
       - name: Validate application
@@ -80,6 +91,8 @@ jobs:
     steps:
       - name: Check out release tag
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Download APK artifacts
         uses: actions/download-artifact@v4
@@ -96,7 +109,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body_path: ./publish/changeLog.md
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
           prerelease: false
           draft: false
           fail_on_unmatched_files: true

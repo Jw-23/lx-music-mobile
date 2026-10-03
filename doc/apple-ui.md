@@ -34,4 +34,6 @@ Android 原生构建需要 JDK 17、Android SDK 36 和项目指定的 NDK。调�
 
 推送与 package.json 版本一致的 `v*` tag 触发 `.github/workflows/release.yml`。工作流先运行测试、类型检查与 lint，再生成签名 APK，发布各 CPU 架构及通用安装包，同时提供 SHA256 校验文件。
 
+工作流也支持在 Actions 中手动运行并填写已有版本 tag；会检出该 tag，验证版本一致后构建，用于首次触发或重试。
+
 签名使用仓库的 `KEYSTORE_STORE_FILE_BASE64`、`KEYSTORE_STORE_FILE`、`KEYSTORE_KEY_ALIAS`、`KEYSTORE_PASSWORD` 和 `KEYSTORE_KEY_PASSWORD` secrets。首次发布的 fork 使用独立签名；本地备份为受 Git 忽略的 `android/app/lx-music-release.keystore` 和 `android/keystore.properties`，应一并安全备份以供后续版本继续使用。不能覆盖安装上游官方签名的 APK。
