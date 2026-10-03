@@ -53,6 +53,7 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onShowSearchBar, o
   }
 
   useEffect(() => {
+    if (listState.activeListId) return
     void getListPrevSelectId().then((id) => {
       setActiveList(id)
     })
@@ -75,7 +76,7 @@ const styles = createStyle({
   currentList: {
     flexDirection: 'row',
     paddingRight: 2,
-    height: 36,
+    height: 48,
     alignItems: 'center',
     borderBottomWidth: BorderWidths.normal,
     // backgroundColor: 'rgba(0,0,0,0.2)',

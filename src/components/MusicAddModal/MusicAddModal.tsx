@@ -1,89 +1,43 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import Dialog, { type DialogType } from '@/components/common/Dialog'
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { toast } from '@/utils/tools'
-import Title from './Title'
-import List from './List'
 import { useI18n } from '@/lang'
-import { addListMusics, moveListMusics } from '@/core/list'
+import { addListMusics, getListMusics, moveListMusics } from '@/core/list'
 import settingState from '@/store/setting/state'
+import Sheet from '@/components/common/Sheet'
+import PlaylistPicker from '@/components/PlaylistPicker'
 
 export interface SelectInfo {
   musicInfo: LX.Music.MusicInfo | null
   listId: string
   isMove: boolean
-  // single: boolean
 }
-const initSelectInfo = {}
-
-export interface MusicAddModalProps {
-  onAdded?: () => void
-  // onRename: (listInfo: LX.List.UserListInfo) => void
-  // onImport: (listInfo: LX.List.MyListInfo, index: number) => void
-  // onExport: (listInfo: LX.List.MyListInfo, index: number) => void
-  // onSync: (listInfo: LX.List.UserListInfo) => void
-  // onRemove: (listInfo: LX.List.UserListInfo) => void
-}
-export interface MusicAddModalType {
-  show: (info: SelectInfo) => void
-}
+export interface MusicAddModalProps { onAdded?: () => void }
+export interface MusicAddModalType { show: (info: SelectInfo) => void }
 
 export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, ref) => {
   const t = useI18n()
-  const dialogRef = useRef<DialogType>(null)
-  const [selectInfo, setSelectInfo] = useState<SelectInfo>(initSelectInfo as SelectInfo)
-
-  useImperativeHandle(ref, () => ({
-    show(selectInfo) {
-      setSelectInfo(selectInfo)
-
-      requestAnimationFrame(() => {
-        dialogRef.current?.setVisible(true)
-      })
-    },
-  }))
-
-  const handleHide = () => {
-    requestAnimationFrame(() => {
-      setSelectInfo({ ...selectInfo, musicInfo: null })
-    })
+  const [info, setInfo] = useState<SelectInfo | null>(null)
+  const [busy, setBusy] = useState(false)
+  const submitting = useRef(false)
+  useImperativeHandle(ref, () => ({ show(info) { if (!submitting.current) setInfo(info) } }))
+  const songs = useMemo(() => info?.musicInfo ? [info.musicInfo] : [], [info])
+  const select = async(list: LX.List.MyListInfo) => {
+    if (!info?.musicInfo || submitting.current) return
+    submitting.current = true
+    setBusy(true)
+    try {
+      const existing = await getListMusics(list.id)
+      if (existing.some(song => song.id === info.musicInfo?.id)) { toast(t('list_add_tip_exists')); return }
+      if (info.isMove) await moveListMusics(info.listId, list.id, [info.musicInfo], settingState.setting['list.addMusicLocationType'])
+      else await addListMusics(list.id, [info.musicInfo], settingState.setting['list.addMusicLocationType'])
+      toast(t('library_added', { name: list.name }))
+      setInfo(null)
+      onAdded?.()
+    } catch { toast(t(info.isMove ? 'list_edit_action_tip_move_failed' : 'list_edit_action_tip_add_failed')) } finally { submitting.current = false; setBusy(false) }
   }
-
-  const handleSelect = (listInfo: LX.List.MyListInfo) => {
-    dialogRef.current?.setVisible(false)
-    if (selectInfo.isMove) {
-      void moveListMusics(selectInfo.listId, listInfo.id,
-        [selectInfo.musicInfo!],
-        settingState.setting['list.addMusicLocationType'],
-      ).then(() => {
-        onAdded?.()
-        toast(t('list_edit_action_tip_move_success'))
-      }).catch(() => {
-        toast(t('list_edit_action_tip_move_failed'))
-      })
-    } else {
-      void addListMusics(listInfo.id,
-        [selectInfo.musicInfo!],
-        settingState.setting['list.addMusicLocationType'],
-      ).then(() => {
-        onAdded?.()
-        toast(t('list_edit_action_tip_add_success'))
-      }).catch(() => {
-        toast(t('list_edit_action_tip_add_failed'))
-      })
-    }
-  }
-
   return (
-    <Dialog ref={dialogRef} onHide={handleHide}>
-      {
-        selectInfo.musicInfo
-          ? (<>
-              <Title musicInfo={selectInfo.musicInfo} isMove={selectInfo.isMove} />
-              <List musicInfo={selectInfo.musicInfo} onPress={handleSelect} />
-            </>)
-          : null
-      }
-    </Dialog>
+    <Sheet visible={!!info?.musicInfo} title={t(info?.isMove ? 'library_move' : 'library_add')} onClose={() => { if (!submitting.current) setInfo(null) }}>
+      {info?.musicInfo ? <PlaylistPicker key={info.musicInfo.id} musics={songs} sourceListId={info.listId} isMove={info.isMove} busy={busy} onSelect={select} /> : null}
+    </Sheet>
   )
 })
-

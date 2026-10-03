@@ -7,7 +7,7 @@ import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 import { getSearchSetting } from '@/utils/data'
-import { BorderWidths } from '@/theme'
+import { useDesignColors } from '@/theme/design'
 
 const SEARCH_TYPE_LIST = [
   'music',
@@ -17,6 +17,7 @@ const SEARCH_TYPE_LIST = [
 export default () => {
   const t = useI18n()
   const theme = useTheme()
+  const colors = useDesignColors()
   const [type, setType] = useState<SearchType>('music')
 
   useEffect(() => {
@@ -35,10 +36,10 @@ export default () => {
   }
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps={'always'} horizontal={true}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.secondarySurface }]} keyboardShouldPersistTaps={'always'} horizontal={true}>
       {
         list.map(t => (
-          <TouchableOpacity style={styles.button} onPress={() => { handleTypeChange(t.id) }} key={t.id}>
+          <TouchableOpacity style={[styles.button, { backgroundColor: type === t.id ? colors.surface : 'transparent' }]} accessibilityRole="button" accessibilityState={{ selected: type === t.id }} onPress={() => { handleTypeChange(t.id) }} key={t.id}>
             <Text style={{ ...styles.buttonText, borderBottomColor: type == t.id ? theme['c-primary-background-active'] : 'transparent' }} color={type == t.id ? theme['c-primary-font-active'] : theme['c-font']}>{t.label}</Text>
           </TouchableOpacity>
         ))
@@ -49,7 +50,9 @@ export default () => {
 
 const styles = createStyle({
   container: {
-    height: '100%',
+    minHeight: 36,
+    borderRadius: 10,
+    padding: 3,
     flexGrow: 0,
     flexShrink: 1,
     // paddingLeft: 5,
@@ -60,8 +63,10 @@ const styles = createStyle({
     // height: 38,
     // lineHeight: 38,
     justifyContent: 'center',
-    paddingLeft: 8,
-    paddingRight: 8,
+    paddingLeft: 10,
+    paddingRight: 10,
+    borderRadius: 8,
+    minHeight: 32,
     // width: 80,
     // backgroundColor: 'rgba(0,0,0,0.1)',
   },
@@ -74,7 +79,7 @@ const styles = createStyle({
     // paddingTop: 10,
     paddingTop: 3,
     paddingBottom: 3,
-    borderBottomWidth: BorderWidths.normal3,
+    borderBottomWidth: 0,
     // width: 80,
   },
 })

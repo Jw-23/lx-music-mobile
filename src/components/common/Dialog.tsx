@@ -9,7 +9,7 @@ import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { scaleSizeH } from '@/utils/pixelRatio'
 
-const HEADER_HEIGHT = 20
+const HEADER_HEIGHT = 44
 const styles = createStyle({
   centeredView: {
     flex: 1,
@@ -21,7 +21,7 @@ const styles = createStyle({
     minWidth: '60%',
     maxHeight: '78%',
     // backgroundColor: 'white',
-    borderRadius: 4,
+    borderRadius: 24,
     // shadowColor: '#000',
     // shadowOffset: {
     //   width: 0,
@@ -35,19 +35,20 @@ const styles = createStyle({
     flexGrow: 0,
     flexShrink: 0,
     flexDirection: 'row',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     height: HEADER_HEIGHT,
   },
   title: {
-    paddingLeft: 5,
-    paddingRight: 25,
+    paddingLeft: 20,
+    paddingRight: 48,
+    fontWeight: '600',
     lineHeight: HEADER_HEIGHT,
   },
   closeBtn: {
     position: 'absolute',
     right: 0,
-    borderTopRightRadius: 4,
+    borderTopRightRadius: 24,
     flexGrow: 0,
     flexShrink: 0,
     height: HEADER_HEIGHT,
@@ -91,8 +92,8 @@ export default forwardRef<DialogType, DialogProps>(({
 
   const closeBtnComponent = useMemo(() => {
     return closeBtn
-      ? <TouchableHighlight style={{ ...styles.closeBtn, width: scaleSizeH(HEADER_HEIGHT) }} underlayColor={theme['c-primary-dark-200-alpha-600']} onPress={() => modalRef.current?.setVisible(false)}>
-          <Icon name="close" color={theme['c-primary-dark-500-alpha-500']} size={10} />
+      ? <TouchableHighlight accessibilityRole="button" accessibilityLabel={global.i18n.t('library_close')} style={{ ...styles.closeBtn, width: scaleSizeH(HEADER_HEIGHT) }} underlayColor={theme['c-primary-dark-200-alpha-600']} onPress={() => modalRef.current?.setVisible(false)}>
+          <Icon name="close" color={theme['c-primary-dark-500-alpha-500']} size={16} />
         </TouchableHighlight>
       : null
   }, [closeBtn, theme])
@@ -101,8 +102,8 @@ export default forwardRef<DialogType, DialogProps>(({
     <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(50,50,50,.3)" ref={modalRef}>
       <View style={{ ...styles.centeredView, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
         <View style={{ ...styles.modalView, height, backgroundColor: theme['c-content-background'] }} onStartShouldSetResponder={() => true}>
-          <View style={{ ...styles.header, backgroundColor: theme['c-primary-light-100-alpha-100'] }}>
-            <Text style={styles.title} size={13} color={theme['c-primary-light-1000']} numberOfLines={1}>{title}</Text>
+          <View style={{ ...styles.header, backgroundColor: theme['c-content-background'] }}>
+            <Text style={styles.title} size={17} color={theme['c-font']} numberOfLines={1}>{title}</Text>
             {closeBtnComponent}
           </View>
           {children}

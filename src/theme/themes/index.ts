@@ -92,6 +92,13 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     'c-list-header-border-bottom': theme.config.themeColors['c-primary-alpha-900'],
     'c-content-background': theme.config.themeColors['c-primary-light-1000'],
     'c-border-background': theme.config.themeColors['c-primary-light-100-alpha-700'],
+    ...(theme.id.startsWith('apple') ? {
+      'c-font': theme.isDark ? '#F5F5F7' : '#1C1C1E',
+      'c-font-label': theme.isDark ? '#AEAEB2' : '#636366',
+      'c-content-background': theme.isDark ? '#1C1C1E' : '#FFFFFF',
+      'c-primary-input-background': theme.isDark ? '#2C2C2E' : '#E5E5EA',
+      'c-border-background': theme.isDark ? '#38383A' : '#E5E5EA',
+    } : {}),
     'bg-image': bgImg,
   } as const
 }
@@ -118,7 +125,7 @@ export const getTheme = async() => {
   //   // : 'china_ink'
   //   : settingState.setting['theme.id']
   let themeId = settingState.setting['common.isAutoTheme'] && shouldUseDarkColors
-    ? 'black'
+    ? (settingState.setting['theme.id'].startsWith('apple') ? 'apple_dark' : 'black')
     : settingState.setting['theme.id']
   // themeId = 'naruto'
   // themeId = 'pink'
@@ -128,7 +135,7 @@ export const getTheme = async() => {
     userThemes = await getUserTheme()
     theme = userThemes.find(theme => theme.id == themeId)
     if (!theme) {
-      themeId = settingState.setting['theme.id'] == 'auto' && shouldUseDarkColors ? 'black' : 'green'
+      themeId = settingState.setting['theme.id'] == 'auto' && shouldUseDarkColors ? 'apple_dark' : 'apple'
       theme = themes.find(theme => theme.id == themeId) as LX.Theme
     }
   }

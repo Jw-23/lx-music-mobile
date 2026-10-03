@@ -18,11 +18,11 @@ const styles = createStyle({
   input: {
     // backgroundColor: 'rgba(0,0,0,0.1)',
     // backgroundColor: 'white',
-    borderRadius: 2,
+    borderRadius: 10,
     paddingTop: 0,
     paddingBottom: 0,
-    height: 32,
-    paddingLeft: 5,
+    height: 44,
+    paddingLeft: 12,
     paddingRight: 0,
     flexGrow: 1,
     flexShrink: 1,
@@ -36,7 +36,7 @@ const styles = createStyle({
   },
   clearBtn: {
     height: '70%',
-    paddingLeft: 5,
+    paddingLeft: 12,
     paddingRight: 5,
     justifyContent: 'center',
     // backgroundColor: 'rgba(0,0,0,0.2)',
@@ -58,7 +58,7 @@ export interface InputType {
   isFocused: () => boolean
 }
 
-export default forwardRef<InputType, InputProps>(({ onChangeText, onClearText, clearBtn, style, size = 14, ...props }, ref) => {
+export default forwardRef<InputType, InputProps>(({ onChangeText, onClearText, clearBtn, style, size = 17, ...props }, ref) => {
   const inputRef = useRef<TextInput>(null)
   const theme = useTheme()
   // const scaleClearBtn = useRef(new Animated.Value(0)).current

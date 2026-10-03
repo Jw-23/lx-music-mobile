@@ -1,193 +1,105 @@
-name: Build
+name: Release Android
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   Android:
-    name: Android
+    name: Validate and build Android
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
-      - name: Check out git repository
+      - name: Check out release tag
         uses: actions/checkout@v4
 
       - name: Setup Env
         uses: ./.github/actions/setup
 
-      - name: Build Packages
-        env:
-          DISABLE_SVG: 1
+      - name: Validate tag and package version
         shell: bash
         run: |
-          cd android
-          echo ${{ secrets.KEYSTORE_STORE_FILE_BASE64 }} | base64 --decode > app/${{ secrets.KEYSTORE_STORE_FILE }}
-          ./gradlew assembleRelease -PMYAPP_UPLOAD_STORE_FILE='${{ secrets.KEYSTORE_STORE_FILE }}' -PMYAPP_UPLOAD_KEY_ALIAS='${{ secrets.KEYSTORE_KEY_ALIAS }}' -PMYAPP_UPLOAD_STORE_PASSWORD='${{ secrets.KEYSTORE_PASSWORD }}' -PMYAPP_UPLOAD_KEY_PASSWORD='${{ secrets.KEYSTORE_KEY_PASSWORD }}'
-          rm -f app/${{ secrets.KEYSTORE_STORE_FILE }}
-
-      # Push tag to GitHub if package.json version's tag is not tagged
-      - name: Get package version
-        run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+          test "$GITHUB_REF_NAME" = "v$PACKAGE_VERSION"
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
 
-      - name: Create git tag
-        uses: pkgdeps/git-tag-action@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          github_repo: ${{ github.repository }}
-          version: ${{ env.PACKAGE_VERSION }}
-          git_commit_sha: ${{ github.sha }}
-          git_tag_prefix: "v"
-
-      - name: Generate file MD5
+      - name: Validate application
         run: |
-          cd android/app/build/outputs/apk/release
-          md5sum *.apk
+          npm run test:recent
+          npx tsc --noEmit
+          npm run lint
 
-      - name: Upload Artifact
-        uses: ./.github/actions/upload-artifact
+      - name: Install Android SDK components
+        run: sdkmanager "platforms;android-36" "build-tools;35.0.0" "ndk;26.1.10909125"
+
+      - name: Build signed packages
         env:
-          PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+          DISABLE_SVG: 1
+          SIGNING_FILE_BASE64: ${{ secrets.KEYSTORE_STORE_FILE_BASE64 }}
+          SIGNING_FILE: ${{ secrets.KEYSTORE_STORE_FILE }}
+          SIGNING_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          SIGNING_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          test -n "$SIGNING_FILE_BASE64"
+          test -n "$SIGNING_FILE"
+          test -n "$SIGNING_ALIAS"
+          test -n "$SIGNING_PASSWORD"
+          test -n "$SIGNING_KEY_PASSWORD"
+          cd android
+          trap 'rm -f "app/$SIGNING_FILE"' EXIT
+          printf '%s' "$SIGNING_FILE_BASE64" | base64 --decode > "app/$SIGNING_FILE"
+          ./gradlew assembleRelease --no-daemon \
+            -PMYAPP_UPLOAD_STORE_FILE="$SIGNING_FILE" \
+            -PMYAPP_UPLOAD_KEY_ALIAS="$SIGNING_ALIAS" \
+            -PMYAPP_UPLOAD_STORE_PASSWORD="$SIGNING_PASSWORD" \
+            -PMYAPP_UPLOAD_KEY_PASSWORD="$SIGNING_KEY_PASSWORD"
 
-  # Android_SL:
-  #   name: Android_SL
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out git repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         ref: statusbar_lyric
-
-  #     - name: Setup Env
-  #       uses: ./.github/actions/setup
-
-  #     - name: Build Packages
-  #       shell: bash
-  #       run: |
-  #         cd android
-  #         echo ${{ secrets.KEYSTORE_STORE_FILE_BASE64 }} | base64 --decode > app/${{ secrets.KEYSTORE_STORE_FILE }}
-  #         ./gradlew assembleRelease -PMYAPP_UPLOAD_STORE_FILE='${{ secrets.KEYSTORE_STORE_FILE }}' -PMYAPP_UPLOAD_KEY_ALIAS='${{ secrets.KEYSTORE_KEY_ALIAS }}' -PMYAPP_UPLOAD_STORE_PASSWORD='${{ secrets.KEYSTORE_PASSWORD }}' -PMYAPP_UPLOAD_KEY_PASSWORD='${{ secrets.KEYSTORE_KEY_PASSWORD }}'
-  #         rm -f app/${{ secrets.KEYSTORE_STORE_FILE }}
-
-  #     # Push tag to GitHub if package.json version's tag is not tagged
-  #     - name: Get package version
-  #       run: |
-  #         node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
-  #         echo "COMMIT_SHA=$(git show -s --format=%H)" >> $GITHUB_ENV
-
-  #     - name: Create git tag
-  #       uses: pkgdeps/git-tag-action@v3
-  #       with:
-  #         github_token: ${{ secrets.GITHUB_TOKEN }}
-  #         github_repo: ${{ github.repository }}
-  #         version: ${{ env.PACKAGE_VERSION }}
-  #         git_commit_sha: ${{ env.COMMIT_SHA }}
-  #         git_tag_prefix: "v"
-
-  #     - name: Generate file MD5
-  #       run: |
-  #         echo "current commit sha: ${{ env.COMMIT_SHA }}"
-  #         cd android/app/build/outputs/apk/release
-  #         md5sum *.apk
-
-  #     - name: Upload Artifact
-  #       uses: ./.github/actions/upload-artifact
-  #       env:
-  #         PACKAGE_TYPE: 'Android_SL'
-  #         PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
-
-  # Android_5:
-  #   name: Android_5
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out git repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         ref: android_5
-
-  #     - name: Setup Env
-  #       uses: ./.github/actions/setup
-
-  #     - name: Build Packages
-  #       shell: bash
-  #       run: |
-  #         cd android
-  #         echo ${{ secrets.KEYSTORE_STORE_FILE_BASE64 }} | base64 --decode > app/${{ secrets.KEYSTORE_STORE_FILE }}
-  #         ./gradlew assembleRelease -PMYAPP_UPLOAD_STORE_FILE='${{ secrets.KEYSTORE_STORE_FILE }}' -PMYAPP_UPLOAD_KEY_ALIAS='${{ secrets.KEYSTORE_KEY_ALIAS }}' -PMYAPP_UPLOAD_STORE_PASSWORD='${{ secrets.KEYSTORE_PASSWORD }}' -PMYAPP_UPLOAD_KEY_PASSWORD='${{ secrets.KEYSTORE_KEY_PASSWORD }}'
-  #         rm -f app/${{ secrets.KEYSTORE_STORE_FILE }}
-
-  #     # Push tag to GitHub if package.json version's tag is not tagged
-  #     - name: Get package version
-  #       run: |
-  #         node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
-  #         echo "COMMIT_SHA=$(git show -s --format=%H)" >> $GITHUB_ENV
-
-  #     - name: Create git tag
-  #       uses: pkgdeps/git-tag-action@v3
-  #       with:
-  #         github_token: ${{ secrets.GITHUB_TOKEN }}
-  #         github_repo: ${{ github.repository }}
-  #         version: ${{ env.PACKAGE_VERSION }}
-  #         git_commit_sha: ${{ env.COMMIT_SHA }}
-  #         git_tag_prefix: "v"
-
-  #     - name: Generate file MD5
-  #       run: |
-  #         echo "current commit sha: ${{ env.COMMIT_SHA }}"
-  #         cd android/app/build/outputs/apk/release
-  #         md5sum *.apk
-
-  #     - name: Upload Artifact
-  #       uses: ./.github/actions/upload-artifact
-  #       env:
-  #         PACKAGE_TYPE: 'Android_5'
-  #         PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-v${{ env.PACKAGE_VERSION }}
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
 
   Release:
-    name: Release
+    name: Publish GitHub release
+    needs: Android
     runs-on: ubuntu-latest
-    # needs: [Android, Android_SL]
-    needs: [Android]
+    permissions:
+      contents: write
     steps:
-      - name: Check out git repository
+      - name: Check out release tag
         uses: actions/checkout@v4
 
-      - name: Download Artifacts
+      - name: Download APK artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
           merge-multiple: true
 
-      - name: Generate file MD5
+      - name: Generate checksums
         run: |
-          echo -e '\n### File MD5\n```' >> ./publish/changeLog.md
           cd artifacts
-          md5sum *.apk >> ../publish/changeLog.md
-          echo -e '```\n' >> ../publish/changeLog.md
-          echo -e '\n[软件安装包说明](https://lyswhut.github.io/lx-music-doc/download#%E8%BD%AF%E4%BB%B6%E5%AE%89%E8%A3%85%E5%8C%85%E8%AF%B4%E6%98%8E)\n' >> ../publish/changeLog.md
+          sha256sum *.apk > SHA256SUMS.txt
 
-      - name: Get package version
-        run: |
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
-
-      - name: Release
+      - name: Publish release and APKs
         uses: softprops/action-gh-release@v2
         with:
           body_path: ./publish/changeLog.md
+          tag_name: ${{ github.ref_name }}
           prerelease: false
           draft: false
-          tag_name: v${{ env.PACKAGE_VERSION }}
+          fail_on_unmatched_files: true
           files: |
-            artifacts/lx-music-mobile-v${{ env.PACKAGE_VERSION }}-arm64-v8a.apk
-            artifacts/lx-music-mobile-v${{ env.PACKAGE_VERSION }}-armeabi-v7a.apk
-            artifacts/lx-music-mobile-v${{ env.PACKAGE_VERSION }}-x86_64.apk
-            artifacts/lx-music-mobile-v${{ env.PACKAGE_VERSION }}-x86.apk
-            artifacts/lx-music-mobile-v${{ env.PACKAGE_VERSION }}-universal.apk
-
-          # artifacts/lx-music-mobile-v${{ env.PACKAGE_VERSION }}-sl-arm64-v8a.apk
-          # artifacts/lx-music-mobile-v${{ env.PACKAGE_VERSION }}-android_5-universal.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            artifacts/*.apk
+            artifacts/SHA256SUMS.txt

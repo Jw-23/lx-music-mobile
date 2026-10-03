@@ -15,8 +15,8 @@ const PrevBtn = ({ size }: { size: number }) => {
     void playPrev()
   }
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} activeOpacity={0.5} onPress={handlePlayPrev}>
-      <Icon name='prevMusic' color={theme['c-button-font']} rawSize={size * 0.7} />
+    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} accessibilityRole="button" accessibilityLabel={global.i18n.t('library_previous')} activeOpacity={0.5} onPress={handlePlayPrev}>
+      <Icon name='prevMusic' color={theme['c-font']} rawSize={size * 0.62} />
     </TouchableOpacity>
   )
 }
@@ -26,8 +26,8 @@ const NextBtn = ({ size }: { size: number }) => {
     void playNext()
   }
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} activeOpacity={0.5} onPress={handlePlayNext}>
-      <Icon name='nextMusic' color={theme['c-button-font']} rawSize={size * 0.7} />
+    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} accessibilityRole="button" accessibilityLabel={global.i18n.t('library_next')} activeOpacity={0.5} onPress={handlePlayNext}>
+      <Icon name='nextMusic' color={theme['c-font']} rawSize={size * 0.62} />
     </TouchableOpacity>
   )
 }
@@ -36,8 +36,8 @@ const TogglePlayBtn = ({ size }: { size: number }) => {
   const theme = useTheme()
   const isPlay = useIsPlay()
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} activeOpacity={0.5} onPress={togglePlay}>
-      <Icon name={isPlay ? 'pause' : 'play'} color={theme['c-button-font']} rawSize={size * 0.7} />
+    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} accessibilityRole="button" accessibilityLabel={global.i18n.t(isPlay ? 'player_pause' : 'library_play')} activeOpacity={0.5} onPress={togglePlay}>
+      <Icon name={isPlay ? 'pause' : 'play'} color={theme['c-font']} rawSize={size * 0.62} />
     </TouchableOpacity>
   )
 }
@@ -74,7 +74,7 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
     paddingHorizontal: '4%',
-    paddingVertical: 22,
+    paddingVertical: 16,
     // backgroundColor: 'rgba(0, 0, 0, .1)',
   },
   cotrolBtn: {

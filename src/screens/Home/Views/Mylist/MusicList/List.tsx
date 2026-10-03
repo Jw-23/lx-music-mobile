@@ -1,7 +1,12 @@
 import { playList } from '@/core/player/player'
 import { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
-import { FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
+import { Pressable, View, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
+import Text from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
+import { useI18n } from '@/lang'
+import { useDesignColors } from '@/theme/design'
+import { setNavActiveId } from '@/core/common'
 import listState from '@/store/list/state'
 import playerState from '@/store/player/state'
 import { getListPosition, getListPrevSelectId, saveListPosition } from '@/utils/data'
@@ -45,7 +50,8 @@ const usePlayIndex = () => {
 
 
 const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, onSelectAll }, ref) => {
-  // const t = useI18n()
+  const t = useI18n()
+  const colors = useDesignColors()
   const flatListRef = useRef<FlatList>(null)
   const [currentList, setList] = useState<LX.List.ListMusics>([])
   const listFirstScrollRef = useRef(false)
@@ -163,8 +169,10 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       if (playerState.playMusicInfo.listId) {
         waitJumpListPositionRef.current = true
         updateList(playerState.playMusicInfo.listId)
-      } else void getListPrevSelectId().then(updateList)
-    } else void getListPrevSelectId().then(updateList)
+      } else if (listState.activeListId) updateList(listState.activeListId)
+      else void getListPrevSelectId().then(updateList)
+    } else if (listState.activeListId) updateList(listState.activeListId)
+    else void getListPrevSelectId().then(updateList)
 
     global.state_event.on('mylistToggled', updateList)
     global.app_event.on('myListMusicUpdate', handleChange)
@@ -274,6 +282,12 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       onScroll={handleScroll}
       style={styles.list}
       data={currentList}
+      ListEmptyComponent={<View style={{ alignItems: 'center', padding: 24, paddingTop: 40 }}>
+        <Icon name="album" size={36} color={colors.accent} />
+        <Text size={22} style={{ fontWeight: '600', marginTop: 16 }}>{t('library_no_music')}</Text>
+        <Text size={15} color={colors.secondary} style={{ textAlign: 'center', marginVertical: 12 }}>{t('library_empty_hint')}</Text>
+        <Pressable style={{ minHeight: 44, justifyContent: 'center' }} accessibilityRole="button" onPress={() => { setNavActiveId('nav_search') }}><Text color={colors.accent} size={17}>{t('library_search')}</Text></Pressable>
+      </View>}
       maxToRenderPerBatch={4}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}

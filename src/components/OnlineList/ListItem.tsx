@@ -1,10 +1,12 @@
 import { memo, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View, TouchableOpacity, StyleSheet } from 'react-native'
 // import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
+import Image from '@/components/common/Image'
+import { useQuickAdd } from '@/components/QuickAddProvider'
+import { useI18n } from '@/lang'
 import Badge, { type BadgeType } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
-import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { LIST_ITEM_HEIGHT } from '@/config/constant'
@@ -42,6 +44,8 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   isShowInterval: boolean
 }) => {
   const theme = useTheme()
+  const add = useQuickAdd()
+  const labels = useI18n()
 
   const isSelected = selectedList.includes(item)
 
@@ -59,15 +63,15 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   const singer = `${item.singer}${isShowAlbumName && item.meta.albumName ? ` · ${item.meta.albumName}` : ''}`
 
   return (
-    <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }}>
+    <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, borderBottomColor: theme['c-border-background'], backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }}>
       <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }}>
-        <Text style={styles.sn} size={13} color={theme['c-300']}>{index + 1}</Text>
+        <Image url={item.meta.picUrl} style={styles.art} />
         <View style={styles.itemInfo}>
-          <Text numberOfLines={1}>{item.name}</Text>
+          <Text numberOfLines={1} size={17}>{item.name}</Text>
           <View style={styles.listItemSingle}>
             { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
             { showSource ? <Badge type="tertiary">{item.source}</Badge> : null }
-            <Text style={styles.listItemSingleText} size={11} color={theme['c-500']} numberOfLines={1}>{singer}</Text>
+            <Text style={styles.listItemSingleText} size={13} color={theme['c-font-label']} numberOfLines={1}>{singer}</Text>
           </View>
         </View>
         {
@@ -76,14 +80,18 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
           ) : null
         }
       </TouchableOpacity>
-     <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton}>
-        <Icon name="dots-vertical" style={{ color: theme['c-350'] }} size={12} />
+      <TouchableOpacity style={styles.quickAdd} onPress={() => { add(item) }} accessibilityRole="button" accessibilityLabel={`${labels('library_add')} ${item.name}`}>
+        <Text size={26} color={theme['c-primary']}>+</Text>
+      </TouchableOpacity>
+     <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} accessibilityRole="button" accessibilityLabel={labels('library_more')} style={styles.moreButton}>
+        <Icon name="dots-vertical" style={{ color: theme['c-font-label'], transform: [{ rotate: '90deg' }] }} size={16} />
       </TouchableOpacity>
     </View>
   )
 }, (prevProps, nextProps) => {
   return !!(prevProps.item === nextProps.item &&
     prevProps.index === nextProps.index &&
+    prevProps.rowInfo.rowWidth === nextProps.rowInfo.rowWidth &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
     nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(nextProps.item)
@@ -96,8 +104,9 @@ const styles = createStyle({
     flexDirection: 'row',
     flexWrap: 'nowrap',
     // paddingLeft: 10,
-    paddingRight: 2,
+    paddingRight: 6,
     alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
     // borderBottomWidth: BorderWidths.normal,
   },
   listItemLeft: {
@@ -107,6 +116,8 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  art: { width: 42, height: 42, borderRadius: 8, marginLeft: 16, marginRight: 14 },
+  quickAdd: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   sn: {
     width: 38,
     // fontSize: 12,
@@ -144,7 +155,7 @@ const styles = createStyle({
     // paddingTop: 2,
     flexGrow: 0,
     flexShrink: 1,
-    fontWeight: '300',
+    fontWeight: '400',
   },
   listItemBadge: {
     // fontSize: 10,
@@ -159,9 +170,9 @@ const styles = createStyle({
     justifyContent: 'center',
   },
   moreButton: {
-    height: '80%',
-    paddingLeft: 16,
-    paddingRight: 16,
+    height: '100%',
+    width: 44,
+    alignItems: 'center',
     // paddingTop: 10,
     // paddingBottom: 10,
     // backgroundColor: 'rgba(0,0,0,0.2)',

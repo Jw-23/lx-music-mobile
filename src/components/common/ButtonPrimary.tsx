@@ -9,7 +9,7 @@ export interface ButtonProps extends BtnProps {
   size?: number
 }
 
-export default memo(({ disabled, size = 14, onPress, children }: ButtonProps) => {
+export default memo(({ disabled, size = 16, onPress, children }: ButtonProps) => {
   const theme = useTheme()
 
   return (
@@ -23,7 +23,10 @@ const styles = createStyle({
   button: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 4,
+    borderRadius: 12,
     marginRight: 10,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

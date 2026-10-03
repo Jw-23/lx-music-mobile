@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from 'react'
 
+import QuickAddProvider from '@/components/QuickAddProvider'
 import themeState, { ThemeContext } from '../theme/state'
 
 
@@ -22,7 +23,7 @@ export default memo(({ children }: {
 
   return (
     <ThemeContext.Provider value={theme}>
-      {children}
+      <QuickAddProvider>{children}</QuickAddProvider>
     </ThemeContext.Provider>
   )
 })

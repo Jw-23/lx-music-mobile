@@ -1,5 +1,5 @@
 export const HEADER_HEIGHT = 42
-export const LIST_ITEM_HEIGHT = 54
+export const LIST_ITEM_HEIGHT = 68
 export const LIST_SCROLL_POSITION_KEY = '__LIST_SCROLL_POSITION_KEY__'
 
 export const SPLIT_CHAR = {
@@ -50,6 +50,8 @@ export const storageDataPrefix = {
   musicUrl: '@music_url__',
   musicOtherSource: '@music_other_source__',
   playInfo: '@play_info',
+  recentHistory: '@recent_history_v1',
+  interfaceMigration: '@apple_interface_v1',
 
   syncAuthKey: '@sync_auth_key',
   syncHost: '@sync_host',
@@ -148,7 +150,7 @@ export const DEFAULT_SETTING = {
   },
 
   viewPrevState: {
-    id: 'nav_search' as NAV_ID_Type,
+    id: 'nav_love' as NAV_ID_Type,
     // query: {},
   },
 }

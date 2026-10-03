@@ -103,9 +103,14 @@ export const initSetting = async() => {
     }
   }
 
-  // console.log(setting)
+  const migrateInterface = !await getData<boolean>(storageDataPrefix.interfaceMigration)
+  if (migrateInterface) {
+    setting = { ...setting, 'theme.id': 'apple', 'common.isAutoTheme': true, 'theme.dynamicBg': false, 'theme.fontShadow': false }
+  }
+
   const updatedSetting = updateSetting(setting, true)
-  void saveData(storageDataPrefix.setting, updatedSetting.setting)
+  await saveData(storageDataPrefix.setting, updatedSetting.setting)
+  if (migrateInterface) await saveData(storageDataPrefix.interfaceMigration, true)
 
   return updatedSetting
 }

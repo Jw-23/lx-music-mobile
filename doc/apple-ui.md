@@ -1,0 +1,37 @@
+# Apple 风格界面与资料库
+
+界面参考 [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines) 的导航、信息层级和可访问性原则。主界面采用系统字体、大标题、分组列表、独立的迷你播放器和常驻导航。横屏使用侧栏；资料库封面网格按实际可用宽度排列。
+
+## 使用流程
+
+- **资料库**：直接查看歌单、歌曲数量和最近播放；右上角 `+` 创建歌单。
+- **添加歌曲**：搜索结果、歌单歌曲、最近播放和迷你播放器提供直接添加入口。选择面板支持搜索歌单、新建并加入、重复歌曲状态、保存失败重试。单曲与批量操作使用同一选择面板。
+- **歌单详情**：播放、随机播放、重命名和删除；原有歌曲长按菜单、批量管理、导入导出、同步和本地歌曲导入继续可用。资料库的“管理歌单”进入原有高级管理面板。
+- **最近播放**：在音频实际开始播放时记录，保存最新 200 首不同歌曲，重复播放置顶。暂停恢复不会重复记录。支持再次播放、加入歌单、确认后清空。
+
+## 数据与主题
+
+最近播放使用独立的 `@recent_history_v1` 存储键，不属于播放队列或普通歌单，不受清理已播放队列、歌单同步或删除歌单影响。记录与清空的存储写入串行执行，防止旧写入覆盖新数据。现有歌单仍使用原有 list_event 数据层。
+
+`src/theme/design.ts` 定义语义颜色与设计尺寸，新界面读取主题角色。`apple`、`apple_dark` 是默认浅色和深色主题；原有主题和用户自定义主题保留。首次升级时通过 `@apple_interface_v1` 切换到 Apple 默认主题，此后不会覆盖用户选择的皮肤。默认跟随系统外观，可在设置中更改。
+
+## 验证
+
+```sh
+npm ci
+npm run test:recent
+npx tsc --noEmit
+npm run lint
+mkdir -p /tmp/lx-ui-build
+npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output /tmp/lx-ui-build/index.android.bundle --assets-dest /tmp/lx-ui-build/assets
+```
+
+Android 原生构建需要 JDK 17、Android SDK 36 和项目指定的 NDK。调试构建使用项目自带 debug.keystore，不需要 release 的 keystore.properties。发布构建仍需要配置自己的签名密钥。
+
+已完成：最近播放的 6 项自动测试、全项目 TypeScript 和 lint 检查、Android JS bundle 和 arm64 调试原生构建。Android 模拟器已检查资料库、新建歌单、键盘布局、保存及歌单详情；未完成本地音频的端到端播放验收，也未进行 iOS 运行验证。
+
+## GitHub Actions 发布
+
+推送与 package.json 版本一致的 `v*` tag 触发 `.github/workflows/release.yml`。工作流先运行测试、类型检查与 lint，再生成签名 APK，发布各 CPU 架构及通用安装包，同时提供 SHA256 校验文件。
+
+签名使用仓库的 `KEYSTORE_STORE_FILE_BASE64`、`KEYSTORE_STORE_FILE`、`KEYSTORE_KEY_ALIAS`、`KEYSTORE_PASSWORD` 和 `KEYSTORE_KEY_PASSWORD` secrets。首次发布的 fork 使用独立签名；本地备份为受 Git 忽略的 `android/app/lx-music-release.keystore` 和 `android/keystore.properties`，应一并安全备份以供后续版本继续使用。不能覆盖安装上游官方签名的 APK。

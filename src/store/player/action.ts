@@ -60,7 +60,7 @@ export default {
     state.progress.nowPlayTimeStr = formatPlayTime2(currentTime)
     state.progress.maxPlayTime = totalTime
     state.progress.maxPlayTimeStr = formatPlayTime2(totalTime)
-    state.progress.progress = totalTime ? state.progress.nowPlayTime / currentTime : 0
+    state.progress.progress = totalTime ? state.progress.nowPlayTime / totalTime : 0
 
     global.state_event.playProgressChanged({ ...state.progress })
   },
@@ -89,8 +89,8 @@ export default {
       }
       return true
     })
-    if (topList.length) arrUnshift(state.tempPlayList, topList.map(({ musicInfo, listId }) => ({ musicInfo, listId, isTempPlay: true })))
-    if (bottomList.length) arrPush(state.tempPlayList, bottomList.map(({ musicInfo, listId }) => ({ musicInfo, listId, isTempPlay: true })))
+    if (topList.length) arrUnshift(state.tempPlayList, topList.map(({ musicInfo, listId }) => ({ musicInfo, listId: listId ?? '', isTempPlay: true })))
+    if (bottomList.length) arrPush(state.tempPlayList, bottomList.map(({ musicInfo, listId }) => ({ musicInfo, listId: listId ?? '', isTempPlay: true })))
 
     global.state_event.playTempPlayListChanged({ ...state.tempPlayList })
   },

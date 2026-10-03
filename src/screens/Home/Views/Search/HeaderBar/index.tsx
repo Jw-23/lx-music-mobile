@@ -2,7 +2,6 @@ import { useRef, forwardRef, useImperativeHandle } from 'react'
 import { View } from 'react-native'
 
 // import music from '@/utils/musicSdk'
-import { BorderWidths } from '@/theme'
 // import InsetShadow from 'react-native-inset-shadow'
 import SourceSelector, {
   type SourceSelectorType as _SourceSelectorType,
@@ -70,10 +69,11 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
 const styles = createStyle({
   searchBar: {
     flexDirection: 'row',
-    height: 38,
+    minHeight: 56,
     zIndex: 2,
-    paddingRight: 10,
-    borderBottomWidth: BorderWidths.normal,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 0,
   },
   selector: {
     // width: 86,

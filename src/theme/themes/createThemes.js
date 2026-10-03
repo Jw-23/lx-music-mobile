@@ -6,6 +6,40 @@ const { createThemeColors } = require('./utils')
 
 const defaultThemes = [
   {
+    id: 'apple',
+    name: 'Apple · 浅色',
+    isDark: false,
+    config: {
+      primary: 'rgb(215, 0, 52)',
+      font: 'rgb(28, 28, 30)',
+      'c-app-background': '#F2F2F7',
+      'c-main-background': '#F2F2F7',
+      'bg-image': '',
+      'bg-image-position': 'center',
+      'bg-image-size': 'cover',
+      'c-badge-primary': 'var(c-primary)',
+      'c-badge-secondary': '#5856D6',
+      'c-badge-tertiary': '#8E8E93',
+    },
+  },
+  {
+    id: 'apple_dark',
+    name: 'Apple · 深色',
+    isDark: true,
+    config: {
+      primary: 'rgb(255, 69, 90)',
+      font: 'rgb(245, 245, 247)',
+      'c-app-background': '#000000',
+      'c-main-background': '#000000',
+      'bg-image': '',
+      'bg-image-position': 'center',
+      'bg-image-size': 'cover',
+      'c-badge-primary': 'var(c-primary)',
+      'c-badge-secondary': '#5856D6',
+      'c-badge-tertiary': '#8E8E93',
+    },
+  },
+  {
     id: 'green',
     name: '绿意盎然',
     isDark: false,
