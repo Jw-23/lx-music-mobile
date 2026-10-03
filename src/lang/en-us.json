@@ -264,7 +264,7 @@
   "player__getting_url": "Getting music link...",
   "player__getting_url_delay_retry": "The server is busy. Try again in {time} seconds...",
   "player__loading": "Music loading...",
-  "player__refresh_url": "Music URL expired, refreshing...",
+  "player__refresh_url": "Audio failed to load, retrying the URL...",
   "player_cache_migrating": "Song cache is being migrated, please wait ⌛️",
   "quality_high_quality": "HQ",
   "quality_lossless": "SQ",

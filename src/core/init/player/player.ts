@@ -6,6 +6,7 @@ import { setStop } from '@/plugins/player'
 import { delayUpdateMusicInfo } from '@/plugins/player/playList'
 import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
+import { urlRefreshGuard } from '@/core/player/urlRefreshGuard'
 
 
 export default async(setting: LX.AppSetting) => {
@@ -18,6 +19,7 @@ export default async(setting: LX.AppSetting) => {
   }
 
   const handleEnded = () => {
+    if (urlRefreshGuard.busy()) return
     // setTimeout(() => {
     if (global.lx.isPlayedStop) {
       setStatusText(global.i18n.t('player__end'))

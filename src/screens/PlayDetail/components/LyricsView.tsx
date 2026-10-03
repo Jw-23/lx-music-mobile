@@ -71,6 +71,7 @@ export default ({ orientation }: { orientation: 'vertical' | 'horizontal' }) => 
       renderItem={({ item, index }) => <LrcLine line={item} lineNum={index} activeLine={line} onLayout={scroll.onLineLayout} orientation={orientation} reduceMotion={scroll.reduceMotion} onSeek={scroll.onSeekLine} />}
       keyExtractor={(item, index) => `${index}${item.text}`}
       style={styles.container}
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       bounces
       overScrollMode="always"
@@ -87,6 +88,7 @@ export default ({ orientation }: { orientation: 'vertical' | 'horizontal' }) => 
 }
 
 const styles = createStyle({
-  container: { flex: 1, paddingHorizontal: 20 },
-  line: { minHeight: 44, justifyContent: 'center', paddingVertical: 12 },
+  container: { flex: 1 },
+  content: { paddingHorizontal: 28 },
+  line: { minHeight: 44, justifyContent: 'center', paddingVertical: 12, paddingHorizontal: 8 },
 })

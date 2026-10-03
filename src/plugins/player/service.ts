@@ -3,6 +3,7 @@ import TrackPlayer, { State as TPState, Event as TPEvent } from 'react-native-tr
 // import { store } from '@/store'
 // import { action as playerAction, STATUS } from '@/store/modules/player'
 import { isTempId, isEmpty } from './utils'
+import { isManualStop, markActiveTrack } from './stopIntent'
 // import { play as lrcPlay, pause as lrcPause } from '@/core/lyric'
 import { exitApp } from '@/core/common'
 import { getCurrentTrackId } from './playList'
@@ -113,6 +114,7 @@ const registerPlaybackService = async() => {
   TrackPlayer.addEventListener(TPEvent.PlaybackTrackChanged, async info => {
     // console.log('PlaybackTrackChanged====>', info)
     global.lx.playerTrackId = await getCurrentTrackId()
+    if (!isEmpty()) markActiveTrack()
     if (info.track == null) return
     if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
 
@@ -122,7 +124,7 @@ const registerPlaybackService = async() => {
       await TrackPlayer.pause()
       global.app_event.playerPause()
       global.app_event.pause()
-      global.app_event.playerEnded()
+      if (!isManualStop()) global.app_event.playerEnded()
       global.app_event.playerEmptied()
       // if (retryTrack) {
       //   if (retryTrack.musicId == retryGetUrlId) {

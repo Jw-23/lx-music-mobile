@@ -3,6 +3,7 @@ import BackgroundTimer from 'react-native-background-timer'
 import { playMusic as handlePlayMusic } from './playList'
 import { existsFile, moveFile, privateStorageDirectoryPath, temporaryDirectoryPath } from '@/utils/fs'
 import { toast } from '@/utils/tools'
+import { markManualStop } from './stopIntent'
 // import { PlayerMusicInfo } from '@/store/modules/player/playInfo'
 
 
@@ -158,6 +159,7 @@ export const setPlay = async() => TrackPlayer.play()
 export const getPosition = async() => TrackPlayer.getPosition()
 export const getDuration = async() => TrackPlayer.getDuration()
 export const setStop = async() => {
+  markManualStop()
   await TrackPlayer.stop()
   if (!isEmpty()) await TrackPlayer.skipToNext()
 }

@@ -1,4 +1,5 @@
-import { playNext, setMusicUrl } from '@/core/player/player'
+import { clearFailedMusic, setMusicUrl, skipFailedMusic } from '@/core/player/player'
+import { urlRefreshGuard } from '@/core/player/urlRefreshGuard'
 import { setStatusText } from '@/core/player/playStatus'
 import { getPosition, isEmpty, setStop } from '@/plugins/player'
 import { isActive } from '@/utils/tools'
@@ -6,133 +7,106 @@ import BackgroundTimer from 'react-native-background-timer'
 import playerState from '@/store/player/state'
 import { setNowPlayTime } from '@/core/player/progress'
 
-
 export default () => {
-  let retryNum = 0
-  let prevTimeoutId: string | null = null
-
   let loadingTimeout: number | null = null
   let delayNextTimeout: number | null = null
-  const startLoadingTimeout = () => {
-    // console.log('start load timeout')
-    clearLoadingTimeout()
-    loadingTimeout = BackgroundTimer.setTimeout(() => {
-      // if (global.lx.isPlayedStop) {
-      //   prevTimeoutId = null
-      //   setStatusText('')
-      //   return
-      // }
+  let healthyTimeout: number | null = null
 
-      // 如果加载超时，则尝试刷新URL
-      if (prevTimeoutId == playerState.musicInfo.id) {
-        prevTimeoutId = null
-        void playNext(true)
-      } else {
-        prevTimeoutId = playerState.musicInfo.id
-        if (playerState.playMusicInfo.musicInfo) setMusicUrl(playerState.playMusicInfo.musicInfo, true)
-      }
-    }, 25000)
-  }
   const clearLoadingTimeout = () => {
-    if (!loadingTimeout) return
-    // console.log('clear load timeout')
-    BackgroundTimer.clearTimeout(loadingTimeout)
+    if (loadingTimeout != null) BackgroundTimer.clearTimeout(loadingTimeout)
     loadingTimeout = null
   }
-
   const clearDelayNextTimeout = () => {
-    // console.log(this.delayNextTimeout)
-    if (!delayNextTimeout) return
-    BackgroundTimer.clearTimeout(delayNextTimeout)
+    if (delayNextTimeout != null) BackgroundTimer.clearTimeout(delayNextTimeout)
     delayNextTimeout = null
   }
-  const addDelayNextTimeout = () => {
-    clearDelayNextTimeout()
-    delayNextTimeout = BackgroundTimer.setTimeout(() => {
-      if (global.lx.isPlayedStop) {
-        setStatusText('')
-        return
-      }
-      void playNext(true)
-    }, 5000)
+  const clearHealthyTimeout = () => {
+    if (healthyTimeout != null) BackgroundTimer.clearTimeout(healthyTimeout)
+    healthyTimeout = null
+  }
+
+  const handleError = () => {
+    const musicInfo = playerState.playMusicInfo.musicInfo
+    if (!musicInfo || global.lx.isPlayedStop || urlRefreshGuard.busy()) return
+    clearLoadingTimeout()
+    clearHealthyTimeout()
+
+    // Reserve before awaiting the native position: duplicate errors share one retry.
+    const token = urlRefreshGuard.reserve()
+    if (token != null) {
+      void getPosition().catch(() => null).then(async(position) => {
+        if (!urlRefreshGuard.isCurrent(token) || playerState.playMusicInfo.musicInfo !== musicInfo || global.lx.isPlayedStop) return
+        if (position != null && Number.isFinite(position) && position >= 0) setNowPlayTime(position)
+        setStatusText(global.i18n.t('player__refresh_url'))
+        await setMusicUrl(musicInfo, true)
+      }).catch(console.warn).finally(() => { urlRefreshGuard.finish(token) })
+      return
+    }
+
+    const failureToken = urlRefreshGuard.fail()
+    void (isEmpty() ? Promise.resolve() : setStop()).catch(console.warn).then(() => {
+      if (playerState.playMusicInfo.musicInfo !== musicInfo || global.lx.isPlayedStop || !urlRefreshGuard.isCurrent(failureToken)) return
+      setStatusText(global.i18n.t('player__error'))
+      if (!isActive()) { void skipFailedMusic().catch(console.warn); return }
+      clearDelayNextTimeout()
+      delayNextTimeout = BackgroundTimer.setTimeout(() => {
+        delayNextTimeout = null
+        if (playerState.playMusicInfo.musicInfo !== musicInfo || global.lx.isPlayedStop || !urlRefreshGuard.isCurrent(failureToken)) return
+        void skipFailedMusic().catch(console.warn)
+      }, 5000)
+    })
   }
 
   const handleLoadstart = () => {
-    console.log('handleLoadstart', playerState.isPlay)
     if (global.lx.isPlayedStop || !playerState.isPlay) return
-    startLoadingTimeout()
+    clearLoadingTimeout()
+    clearHealthyTimeout()
+    const musicInfo = playerState.playMusicInfo.musicInfo
+    loadingTimeout = BackgroundTimer.setTimeout(() => {
+      loadingTimeout = null
+      if (playerState.playMusicInfo.musicInfo !== musicInfo || global.lx.isPlayedStop) return
+      // URL results are only accepted while paused; transition before refreshing.
+      global.app_event.error()
+      handleError()
+    }, 25000)
     setStatusText(global.i18n.t('player__loading'))
   }
-
-  // const handleLoadeddata = () => {
-  //   setStatusText(global.i18n.t('player__loading'))
-  // }
-
-  // const handleCanplay = () => {
-  //   setStatusText('')
-  // }
 
   const handlePlaying = () => {
     setStatusText('')
     clearLoadingTimeout()
+    clearDelayNextTimeout()
+    clearHealthyTimeout()
+    const musicInfo = playerState.playMusicInfo.musicInfo
+    // Ready/Playing can briefly fire before a bad stream errors. Only sustained
+    // playback clears the failure chain and grants a fresh retry budget.
+    healthyTimeout = BackgroundTimer.setTimeout(() => {
+      healthyTimeout = null
+      if (playerState.playMusicInfo.musicInfo !== musicInfo || !playerState.isPlay || urlRefreshGuard.busy()) return
+      clearFailedMusic()
+      urlRefreshGuard.reset()
+    }, 5000)
   }
-
-  const handleEmpied = () => {
+  const handleEmptied = () => {
     clearDelayNextTimeout()
     clearLoadingTimeout()
+    clearHealthyTimeout()
   }
-
-  const handleWating = () => {
+  const handleWaiting = () => {
+    clearHealthyTimeout()
     setStatusText(global.i18n.t('player__buffering'))
   }
-
-  const handleError = () => {
-    if (!playerState.musicInfo.id) return
-    clearLoadingTimeout()
-    if (global.lx.isPlayedStop) return
-    if (playerState.playMusicInfo.musicInfo && retryNum < 2) { // 若音频URL无效则尝试刷新2次URL
-      let musicInfo = playerState.playMusicInfo.musicInfo
-      void getPosition().then((position) => {
-        if (position) setNowPlayTime(position)
-      }).finally(() => {
-        // console.log(this.retryNum)
-        if (playerState.playMusicInfo.musicInfo !== musicInfo) return
-        retryNum++
-        setMusicUrl(playerState.playMusicInfo.musicInfo, true)
-        setStatusText(global.i18n.t('player__refresh_url'))
-      })
-      return
-    }
-    if (!isEmpty()) void setStop()
-
-    if (isActive()) {
-      setStatusText(global.i18n.t('player__error'))
-      setTimeout(addDelayNextTimeout)
-    } else {
-      console.warn('error skip to next')
-      void playNext(true)
-    }
-  }
-
   const handleSetPlayInfo = () => {
-    retryNum = 0
-    prevTimeoutId = null
-    clearDelayNextTimeout()
-    clearLoadingTimeout()
+    urlRefreshGuard.reset()
+    handleEmptied()
   }
-
-  // const handlePlayedStop = () => {
-  //   clearDelayNextTimeout()
-  //   clearLoadingTimeout()
-  // }
-
 
   global.app_event.on('playerLoadstart', handleLoadstart)
-  // global.app_event.on('playerLoadeddata', handleLoadeddata)
-  // global.app_event.on('playerCanplay', handleCanplay)
   global.app_event.on('playerPlaying', handlePlaying)
-  global.app_event.on('playerWaiting', handleWating)
-  global.app_event.on('playerEmptied', handleEmpied)
+  global.app_event.on('playerWaiting', handleWaiting)
+  global.app_event.on('playerEmptied', handleEmptied)
   global.app_event.on('playerError', handleError)
   global.app_event.on('musicToggled', handleSetPlayInfo)
+  global.app_event.on('pause', clearHealthyTimeout)
+  global.app_event.on('stop', handleEmptied)
 }

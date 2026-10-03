@@ -95,10 +95,10 @@ test('API failure and failed APK download never fall back to upstream or launch 
   }
 })
 
-function playback() {
+function playback(options = {}) {
   const queue = load('src/core/player/playbackQueue.ts')
   const songs = ['a', 'b', 'c', 'd'].map(song)
-  const state = { musicInfo: {}, playInfo: { playerListId: 'saved', playerPlayIndex: 1, playIndex: 1 }, playMusicInfo: { musicInfo: songs[1], listId: 'saved', isTempPlay: false }, playedList: [], tempPlayList: [] }
+  const state = { isPlay: false, progress: { nowPlayTime: 0 }, musicInfo: {}, playInfo: { playerListId: 'saved', playerPlayIndex: 1, playIndex: 1 }, playMusicInfo: { musicInfo: songs[1], listId: 'saved', isTempPlay: false }, playedList: [], tempPlayList: [] }
   const actions = { setMusicInfo() {}, updatePlayIndex(playIndex, playerPlayIndex) { Object.assign(state.playInfo, { playIndex, playerPlayIndex }) }, setPlayMusicInfo(listId, musicInfo, isTempPlay) { state.playMusicInfo = { listId, musicInfo, isTempPlay } }, setPlayListId(id) { state.playInfo.playerListId = id } }
   const playInfo = load('src/core/player/playInfo.ts', {
     '@/store/player/action': { default: actions }, '@/store/player/state': { default: state },
@@ -107,17 +107,20 @@ function playback() {
   }, { global: { app_event: { musicToggled() {} } } })
   const clearPlayedList = () => { state.playedList = [] }
   const settings = { setting: { 'player.togglePlayMethod': 'listLoop' } }
+  const statuses = []
+  let stops = 0
+  const guard = load('src/core/player/urlRefreshGuard.ts')
   const player = load('src/core/player/player.ts', {
-    '@/plugins/player': { isInitialized: () => true, setStop: async() => {} }, '@/core/player/playStatus': {},
+    '@/plugins/player': { isInitialized: () => true, setStop: async() => { stops++ }, ...options.native }, '@/core/player/playStatus': { setStatusText: text => statuses.push(text) },
     '@/store/player/state': { default: state }, '@/store/setting/state': { default: settings }, '@/core/player/playInfo': playInfo,
     '@/core/player/playedList': { clearPlayedList, removePlayedList: index => state.playedList.splice(index, 1) },
     '@/core/player/tempPlayList': { clearTempPlayeList: () => { state.tempPlayList = [] }, removeTempPlayList: index => state.tempPlayList.splice(index, 1) },
-    '@/core/music': {}, '@/utils/message': {}, '@/utils/common': { getRandom: () => 0 },
+    '@/core/music': options.music || {}, '@/utils/message': { requestMsg: { tooManyRequests: 'rate limited', cancelRequest: 'cancelled' } }, '@/utils/common': { getRandom: () => 2 },
     './utils': { filterList: async({ list, playerMusicInfo }) => ({ filteredList: list, playerIndex: list.findIndex(s => s.id === playerMusicInfo?.id) }) },
-    'react-native-background-timer': { default: { clearTimeout() {} } }, '@/utils/tools': { debounceBackgroundTimer: () => () => {} },
-    '@/config/constant': { LIST_IDS: {} }, '@/core/list': {}, './playbackQueue': queue, '@/core/dislikeList': {},
-  }, { global: { lx: {}, app_event: { pause() {} } } })
-  return { queue, songs, state, playInfo, player, settings }
+    'react-native-background-timer': { default: options.timer || { clearTimeout() {} } }, '@/utils/tools': { debounceBackgroundTimer: () => () => {} },
+    '@/config/constant': { LIST_IDS: {} }, '@/core/list': {}, './playbackQueue': queue, './urlRefreshGuard': guard, '@/core/dislikeList': {},
+  }, { ...options.globals, global: { lx: {}, i18n: { t: key => key }, app_event: { pause() {}, error() { state.isPlay = false } } } })
+  return { queue, songs, state, playInfo, player, settings, statuses, stops: () => stops, guard }
 }
 test('reordering and removal change actual next and previous playback without changing the saved playlist', async() => {
   const p = playback()
@@ -413,4 +416,245 @@ test('a failed seek restores the native position; an older failure cannot overri
   await tick()
   assert.deepEqual(racing.positions, [10, 20])
   assert.deepEqual(racing.lyrics, [10, 20])
+})
+
+const flush = () => new Promise(resolve => setImmediate(resolve))
+function fakeTimeouts() {
+  let clock = 0
+  let id = 0
+  const tasks = new Map()
+  return {
+    setTimeout(fn, ms) { tasks.set(++id, { fn, time: clock + ms }); return id },
+    clearTimeout(id) { tasks.delete(id) },
+    advance(ms) {
+      clock += ms
+      for (const [id, task] of [...tasks]) if (task.time <= clock && tasks.has(id)) { tasks.delete(id); task.fn() }
+    },
+    count: () => tasks.size,
+  }
+}
+function playbackErrors({ position = async() => 12, refresh = async() => {} } = {}) {
+  const listeners = {}
+  const timer = fakeTimeouts()
+  const guard = load('src/core/player/urlRefreshGuard.ts')
+  const music = song('broken')
+  const state = { isPlay: false, musicInfo: { id: music.id }, playMusicInfo: { musicInfo: music } }
+  const calls = { positions: 0, urls: 0, stops: 0, skips: 0, progress: [], status: [] }
+  const appEvent = { on(name, fn) { listeners[name] = fn }, error() { state.isPlay = false } }
+  load('src/core/init/player/playerEvent.ts', {
+    '@/core/player/player': { clearFailedMusic() {}, setMusicUrl: async() => { calls.urls++; await refresh() }, skipFailedMusic: async() => { calls.skips++ } },
+    '@/core/player/urlRefreshGuard': guard,
+    '@/core/player/playStatus': { setStatusText: value => calls.status.push(value) },
+    '@/plugins/player': { getPosition: async() => { calls.positions++; return position() }, isEmpty: () => false, setStop: async() => { calls.stops++; state.isPlay = false; listeners.playerEmptied() } },
+    '@/utils/tools': { isActive: () => true }, 'react-native-background-timer': { default: timer },
+    '@/store/player/state': { default: state }, '@/core/player/progress': { setNowPlayTime: value => calls.progress.push(value) },
+  }, { global: { app_event: appEvent, lx: {}, i18n: { t: key => key } } }).default()
+  const emit = name => {
+    if (name === 'playerError') state.isPlay = false
+    if (name === 'playerPlaying') state.isPlay = true
+    listeners[name]()
+  }
+  return { timer, guard, state, calls, emit }
+}
+test('duplicate native errors reserve one refresh before asynchronous position and URL requests finish', async() => {
+  let resolvePosition
+  let resolveRefresh
+  const p = playbackErrors({ position: () => new Promise(resolve => { resolvePosition = resolve }), refresh: () => new Promise(resolve => { resolveRefresh = resolve }) })
+  p.emit('playerError'); p.emit('playerError'); p.emit('playerError')
+  assert.equal(p.calls.positions, 1)
+  resolvePosition(0)
+  await flush()
+  assert.equal(p.calls.urls, 1)
+  assert.deepEqual(p.calls.progress, [0])
+  p.emit('playerError')
+  assert.equal(p.calls.positions, 1)
+  resolveRefresh()
+  await flush()
+  p.emit('playerError')
+  assert.equal(p.calls.positions, 2)
+})
+test('two refreshes exhaust the budget even with brief Playing/Emptied events; one delayed skip follows', async() => {
+  const p = playbackErrors()
+  for (let i = 0; i < 2; i++) {
+    p.emit('playerError'); await flush()
+    p.emit('playerPlaying'); p.emit('playerEmptied')
+  }
+  p.emit('playerError'); p.emit('playerError'); await flush()
+  assert.equal(p.calls.urls, 2)
+  assert.equal(p.calls.stops, 1)
+  p.timer.advance(5000); await flush()
+  assert.equal(p.calls.skips, 1)
+  p.emit('playerError'); await flush()
+  assert.equal(p.calls.urls, 2)
+})
+test('failed position lookup still refreshes; switching songs invalidates pending refresh callbacks', async() => {
+  const p = playbackErrors({ position: async() => { throw new Error('no native position') } })
+  p.emit('playerError'); await flush()
+  assert.equal(p.calls.urls, 1)
+  assert.equal(p.calls.progress.length, 0)
+  let resolvePosition
+  const pending = playbackErrors({ position: () => new Promise(resolve => { resolvePosition = resolve }) })
+  pending.emit('playerError'); await flush()
+  pending.state.playMusicInfo.musicInfo = song('new')
+  pending.emit('musicToggled')
+  resolvePosition(45); await flush()
+  assert.equal(pending.calls.urls, 0)
+  assert.equal(pending.calls.progress.length, 0)
+})
+test('loading timeouts share the refresh budget and pause the state before requesting a URL', async() => {
+  let p
+  p = playbackErrors({ refresh: async() => assert.equal(p.state.isPlay, false) })
+  for (let i = 0; i < 3; i++) {
+    p.state.isPlay = true
+    p.emit('playerLoadstart')
+    p.timer.advance(25000); await flush()
+  }
+  assert.equal(p.calls.urls, 2)
+  assert.equal(p.calls.stops, 1)
+  p.timer.advance(5000); await flush()
+  assert.equal(p.calls.skips, 1)
+})
+test('sustained playback grants a fresh retry budget; manual reset invalidates old tokens', async() => {
+  const p = playbackErrors()
+  p.emit('playerError'); await flush()
+  p.emit('playerError'); await flush()
+  p.emit('playerPlaying')
+  p.timer.advance(5000)
+  p.emit('playerError'); await flush()
+  assert.equal(p.calls.urls, 3)
+  const guard = load('src/core/player/urlRefreshGuard.ts').createUrlRefreshGuard()
+  const old = guard.reserve()
+  guard.reset()
+  const current = guard.reserve()
+  guard.finish(old)
+  assert.equal(guard.busy(), true)
+  assert.equal(guard.isCurrent(old), false)
+  guard.finish(current)
+  assert.equal(guard.busy(), false)
+})
+test('a consistently rate-limited source makes only three requests and then stops retrying', async() => {
+  const timer = fakeTimeouts()
+  let requests = 0
+  const p = playback({ timer, globals: { setTimeout: timer.setTimeout, clearTimeout: timer.clearTimeout, console: { log() {}, warn() {} } }, music: { getMusicUrl: async() => { requests++; throw new Error('rate limited') } } })
+  const pending = p.player.setMusicUrl(p.state.playMusicInfo.musicInfo)
+  await flush()
+  assert.equal(requests, 1)
+  timer.advance(2000); await flush()
+  assert.equal(requests, 2)
+  timer.advance(2000); await pending
+  assert.equal(requests, 3)
+  assert.equal(p.statuses.at(-1), 'rate limited')
+  assert.equal(timer.count(), 1) // Delayed failure skip, not another URL retry.
+  timer.advance(5000); await flush()
+  assert.equal(requests, 3)
+  assert.equal(timer.count(), 0)
+})
+test('an older URL result cannot play or clear the new request state after switching songs', async() => {
+  const timer = fakeTimeouts()
+  const resolvers = []
+  const resources = []
+  const p = playback({ timer, music: { getMusicUrl: () => new Promise(resolve => resolvers.push(resolve)) }, native: { setResource: (...args) => resources.push(args) } })
+  const old = p.player.setMusicUrl(p.songs[1])
+  await flush()
+  p.state.playMusicInfo.musicInfo = p.songs[2]
+  const current = p.player.setMusicUrl(p.songs[2])
+  await flush()
+  resolvers[0]('old-url'); await old
+  assert.equal(resources.length, 0)
+  assert.equal(timer.count(), 1)
+  resolvers[1]('new-url'); await current
+  assert.equal(resources.length, 1)
+  assert.equal(resources[0][1], 'new-url')
+  assert.equal(timer.count(), 0)
+})
+test('a failed single-song loop stops instead of restarting; manually retrying is still allowed', async() => {
+  const p = playback()
+  p.settings.setting['player.togglePlayMethod'] = 'singleLoop'
+  await p.player.skipFailedMusic()
+  assert.equal(p.stops(), 1)
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'b')
+  assert.equal(p.statuses.at(-1), 'player__error')
+  assert.equal(p.guard.urlRefreshGuard.busy(), true)
+  await p.player.playList('saved', 1)
+  assert.equal(p.guard.urlRefreshGuard.busy(), false)
+})
+test('consecutive failures traverse a loop at most once, then stop before returning to the first song', async() => {
+  const p = playback()
+  for (const expected of ['c', 'd', 'a', 'a']) {
+    await p.player.skipFailedMusic()
+    assert.equal(p.state.playMusicInfo.musicInfo.id, expected)
+  }
+  assert.equal(p.statuses.at(-1), 'player__error')
+  assert.equal(p.stops(), 4)
+})
+
+test('programmatic native stop does not emit song completion; a new active track restores natural completion', async() => {
+  const intent = load('src/plugins/player/stopIntent.ts')
+  const listeners = {}
+  const global = { lx: { playerTrackId: 'song__//audio', playerStatus: {} }, app_event: {} }
+  let currentTrackId = global.lx.playerTrackId
+  let ended = 0
+  let emptied = 0
+  let skips = 0
+  Object.assign(global.app_event, { playerPause() {}, pause() {}, playerEnded() { ended++ }, playerEmptied() { emptied++ } })
+  const trackPlayer = { stop: async() => assert.equal(intent.isManualStop(), true), skipToNext: async() => { skips++ }, pause: async() => {}, addEventListener(name, fn) { listeners[name] = fn }, registerPlaybackService(factory) { void factory()() } }
+  const utils = load('src/plugins/player/utils.ts', {
+    'react-native-track-player': { default: trackPlayer }, 'react-native-background-timer': {},
+    './playList': {}, '@/utils/fs': {}, '@/utils/tools': {}, './hook': {}, './stopIntent': intent,
+  }, { global })
+  load('src/plugins/player/service.ts', {
+    'react-native-track-player': { default: trackPlayer, Event: { PlaybackTrackChanged: 'track-changed' } },
+    './utils': utils, './stopIntent': intent, './playList': { getCurrentTrackId: async() => currentTrackId },
+    '@/core/common': {}, '@/core/player/player': {},
+  }, { global }).default()
+  await utils.setStop()
+  assert.equal(skips, 1)
+  currentTrackId = 'song__//default'
+  await listeners['track-changed']({ track: 0 })
+  assert.equal(ended, 0)
+  assert.equal(emptied, 1)
+  currentTrackId = 'next__//audio'
+  await listeners['track-changed']({ track: null })
+  assert.equal(intent.isManualStop(), false)
+  currentTrackId = 'next__//default'
+  await listeners['track-changed']({ track: 0 })
+  assert.equal(ended, 1)
+  assert.equal(emptied, 2)
+})
+test('native completion during error recovery cannot bypass the retry budget or auto-restart a failed song', async() => {
+  const guard = load('src/core/player/urlRefreshGuard.ts')
+  const listeners = {}
+  let next = 0
+  let seeks = 0
+  await load('src/core/init/player/player.ts', {
+    '@/core/player/playedList': {}, '@/core/player/player': { playNext: async() => { next++ } },
+    '@/core/player/playStatus': { setStatusText() {} }, '@/plugins/player': {}, '@/plugins/player/playList': {},
+    '@/store/player/state': { default: {} }, '@/store/setting/state': { default: {} }, '@/core/player/urlRefreshGuard': guard,
+  }, { global: { lx: {}, i18n: { t: key => key }, app_event: { on(name, fn) { listeners[name] = fn }, setProgress() { seeks++ } }, state_event: { on() {} } } }).default({})
+  const token = guard.urlRefreshGuard.reserve()
+  listeners.playerEnded()
+  guard.urlRefreshGuard.finish(token)
+  guard.urlRefreshGuard.fail()
+  listeners.playerEnded()
+  assert.equal(next, 0)
+  assert.equal(seeks, 0)
+  guard.urlRefreshGuard.reset()
+  listeners.playerEnded()
+  assert.equal(next, 1)
+  assert.equal(seeks, 1)
+})
+test('a hung URL request cannot start playback after its loading timeout stops a failed single-song loop', async() => {
+  const timer = fakeTimeouts()
+  let resolveUrl
+  const resources = []
+  const p = playback({ timer, music: { getMusicUrl: () => new Promise(resolve => { resolveUrl = resolve }) }, native: { setResource: (...args) => resources.push(args) } })
+  p.settings.setting['player.togglePlayMethod'] = 'singleLoop'
+  const pending = p.player.setMusicUrl(p.state.playMusicInfo.musicInfo)
+  await flush()
+  timer.advance(100000); await flush()
+  assert.equal(p.stops(), 1)
+  assert.equal(p.statuses.at(-1), 'player__error')
+  resolveUrl('too-late-url'); await pending
+  assert.equal(resources.length, 0)
+  assert.equal(timer.count(), 0)
 })
