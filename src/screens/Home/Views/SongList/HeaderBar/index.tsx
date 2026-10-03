@@ -6,7 +6,6 @@ import SortTab, { type SortTabProps, type SortTabType } from './SortTab'
 // import Tag from './Tag'
 // import OpenList from './OpenList'
 import { createStyle } from '@/utils/tools'
-// import { BorderWidths } from '@/theme'
 import SourceSelector, {
   type SourceSelectorType,
   type SourceSelectorProps,
@@ -15,7 +14,6 @@ import { type Source } from '@/store/songlist/state'
 // import { useTheme } from '@/store/theme/hook'
 import Tag, { type TagType, type TagProps } from './Tag'
 import OpenList, { type OpenListType } from './OpenList'
-// import { BorderWidths } from '@/theme'
 
 export interface HeaderBarProps {
   onSortChange: SortTabProps['onSortChange']
@@ -58,10 +56,11 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onTagC
 const styles = createStyle({
   searchBar: {
     flexDirection: 'row',
-    height: 38,
+    height: 56,
+    paddingHorizontal: 12,
     zIndex: 2,
     // paddingRight: 10,
-    // borderBottomWidth: BorderWidths.normal,
+    // borderBottomWidth: 0,
   },
   selector: {
     width: 86,

@@ -33,7 +33,7 @@ export interface MainType {
   setActiveId: (id: SettingScreenIds) => void
 }
 
-const Main = forwardRef<MainType, {}>((props, ref) => {
+const Main = forwardRef<MainType, { activeId?: SettingScreenIds }>(({ activeId }, ref) => {
   const [id, setId] = useState(global.lx.settingActiveId)
 
   useImperativeHandle(ref, () => ({
@@ -47,7 +47,7 @@ const Main = forwardRef<MainType, {}>((props, ref) => {
   }))
 
   const component = useMemo(() => {
-    switch (id) {
+    switch (activeId ?? id) {
       case 'player': return <Player />
       case 'lyric_desktop': return <LyricDesktop />
       case 'search': return <Search />
@@ -60,7 +60,7 @@ const Main = forwardRef<MainType, {}>((props, ref) => {
       case 'basic':
       default: return <Basic />
     }
-  }, [id])
+  }, [id, activeId])
 
   return component
 })

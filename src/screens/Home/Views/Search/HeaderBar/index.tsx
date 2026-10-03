@@ -69,7 +69,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
 const styles = createStyle({
   searchBar: {
     flexDirection: 'row',
-    minHeight: 56,
+    height: 56,
     zIndex: 2,
     paddingHorizontal: 20,
     paddingBottom: 10,

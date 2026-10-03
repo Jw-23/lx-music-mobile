@@ -1,4 +1,4 @@
-import { Platform, ToastAndroid, BackHandler, Linking, Dimensions, Alert, Appearance, PermissionsAndroid, AppState, StyleSheet, type ScaledSize } from 'react-native'
+import { Platform, ToastAndroid, BackHandler, Linking, Dimensions, Appearance, PermissionsAndroid, AppState, StyleSheet, type ScaledSize } from 'react-native'
 // import ExtraDimensions from 'react-native-extra-dimensions-android'
 import Clipboard from '@react-native-clipboard/clipboard'
 import { storageDataPrefix } from '@/config/constant'
@@ -11,6 +11,7 @@ import { scaleSizeH, scaleSizeW, setSpText } from './pixelRatio'
 import { toOldMusicInfo } from './index'
 import { stringMd5 } from 'react-native-quick-md5'
 import { windowSizeTools } from '@/utils/windowSizeTools'
+import { showAlert } from '@/navigation/alerts'
 
 
 // https://stackoverflow.com/a/47349998
@@ -190,26 +191,14 @@ export const confirmDialog = async({
   confirmButtonText = global.i18n.t('dialog_confirm'),
   bgClose = true,
 }) => {
-  return new Promise<boolean>(resolve => {
-    Alert.alert(title, message, [
-      {
-        text: cancelButtonText,
-        onPress() {
-          resolve(false)
-        },
-      },
-      {
-        text: confirmButtonText,
-        onPress() {
-          resolve(true)
-        },
-      },
-    ], {
-      cancelable: bgClose,
-      onDismiss() {
-        resolve(false)
-      },
-    })
+  return showAlert({
+    title,
+    message,
+    cancelable: bgClose,
+    buttons: [
+      { text: cancelButtonText, value: 0 },
+      { text: confirmButtonText, value: 1 },
+    ],
   })
 }
 
@@ -219,21 +208,7 @@ export const tipDialog = async({
   btnText = global.i18n.t('dialog_confirm'),
   bgClose = true,
 }) => {
-  return new Promise<void>(resolve => {
-    Alert.alert(title, message, [
-      {
-        text: btnText,
-        onPress() {
-          resolve()
-        },
-      },
-    ], {
-      cancelable: bgClose,
-      onDismiss() {
-        resolve()
-      },
-    })
-  })
+  await showAlert({ title, message, cancelable: bgClose, buttons: [{ text: btnText, value: 1 }] })
 }
 
 export const clipboardWriteText = (str: string) => {
@@ -246,40 +221,18 @@ export const checkNotificationPermission = async() => {
   if (isHide != null) return
   const enabled = await isNotificationsEnabled()
   if (enabled) return
-  return new Promise<void>((resolve) => {
-    Alert.alert(
-      global.i18n.t('notifications_check_title'),
-      global.i18n.t('notifications_check_tip'),
-      [
-        {
-          text: global.i18n.t('never_show'),
-          onPress: () => {
-            void saveData(storageDataPrefix.notificationTipEnable, '1')
-            toast(global.i18n.t('disagree_tip'))
-            resolve()
-          },
-        },
-        {
-          text: global.i18n.t('disagree'),
-          onPress: () => {
-            toast(global.i18n.t('disagree_tip'))
-            resolve()
-          },
-        },
-        {
-          text: global.i18n.t('agree_go'),
-          onPress: () => {
-            requestAnimationFrame(() => {
-              void requestNotificationPermission().then((result) => {
-                if (!result) toast(global.i18n.t('disagree_tip'))
-                resolve()
-              })
-            })
-          },
-        },
-      ],
-    )
+  const choice = await showAlert({
+    title: global.i18n.t('notifications_check_title'),
+    message: global.i18n.t('notifications_check_tip'),
+    cancelable: false,
+    buttons: [
+      { text: global.i18n.t('never_show'), value: 2 },
+      { text: global.i18n.t('disagree'), value: 0 },
+      { text: global.i18n.t('agree_go'), value: 1 },
+    ],
   })
+  if (choice === 2) await saveData(storageDataPrefix.notificationTipEnable, '1')
+  if (choice !== 1 || !(await requestNotificationPermission())) toast(global.i18n.t('disagree_tip'))
 }
 
 
@@ -288,40 +241,18 @@ export const checkIgnoringBatteryOptimization = async() => {
   if (isHide != null) return
   const enabled = await isIgnoringBatteryOptimization()
   if (enabled) return
-  return new Promise<void>((resolve) => {
-    Alert.alert(
-      global.i18n.t('ignoring_battery_optimization_check_title'),
-      global.i18n.t('ignoring_battery_optimization_check_tip'),
-      [
-        {
-          text: global.i18n.t('never_show'),
-          onPress: () => {
-            void saveData(storageDataPrefix.ignoringBatteryOptimizationTipEnable, '1')
-            toast(global.i18n.t('disagree_tip'))
-            resolve()
-          },
-        },
-        {
-          text: global.i18n.t('disagree'),
-          onPress: () => {
-            toast(global.i18n.t('disagree_tip'))
-            resolve()
-          },
-        },
-        {
-          text: global.i18n.t('agree_to'),
-          onPress: () => {
-            requestAnimationFrame(() => {
-              void requestIgnoreBatteryOptimization().then((result) => {
-                if (!result) toast(global.i18n.t('disagree_tip'))
-                resolve()
-              })
-            })
-          },
-        },
-      ],
-    )
+  const choice = await showAlert({
+    title: global.i18n.t('ignoring_battery_optimization_check_title'),
+    message: global.i18n.t('ignoring_battery_optimization_check_tip'),
+    cancelable: false,
+    buttons: [
+      { text: global.i18n.t('never_show'), value: 2 },
+      { text: global.i18n.t('disagree'), value: 0 },
+      { text: global.i18n.t('agree_to'), value: 1 },
+    ],
   })
+  if (choice === 2) await saveData(storageDataPrefix.ignoringBatteryOptimizationTipEnable, '1')
+  if (choice !== 1 || !(await requestIgnoreBatteryOptimization())) toast(global.i18n.t('disagree_tip'))
 }
 export const resetNotificationPermissionCheck = async() => {
   return removeData(storageDataPrefix.notificationTipEnable)

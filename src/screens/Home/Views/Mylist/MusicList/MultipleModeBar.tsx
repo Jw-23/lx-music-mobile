@@ -5,7 +5,6 @@ import Text from '@/components/common/Text'
 import Button from '@/components/common/Button'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
-import { BorderWidths } from '@/theme'
 
 export type SelectMode = 'single' | 'range'
 
@@ -98,7 +97,7 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
 
   const animaStyle = useMemo(() => ({
     ...styles.container,
-    // backgroundColor: theme['c-content-background'],
+    backgroundColor: theme['c-content-background'],
     borderBottomColor: theme['c-border-background'],
     opacity: visibleBar ? animFade : 0, // Bind opacity to animated value
     transform: [
@@ -117,17 +116,17 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
       <Animated.View style={animaStyle}>
         <View style={styles.switchBtn}>
           <Button onPress={() => { onSwitchMode('single') }} style={{ ...styles.btn, backgroundColor: selectMode == 'single' ? theme['c-button-background'] : 'rgba(0,0,0,0)' }}>
-            <Text color={theme['c-button-font']}>{global.i18n.t('list_select_single')}</Text>
+            <Text size={15} color={theme['c-button-font']}>{global.i18n.t('list_select_single')}</Text>
           </Button>
           <Button onPress={() => { onSwitchMode('range') }} style={{ ...styles.btn, backgroundColor: selectMode == 'range' ? theme['c-button-background'] : 'rgba(0,0,0,0)' }}>
-            <Text color={theme['c-button-font']}>{global.i18n.t('list_select_range')}</Text>
+            <Text size={15} color={theme['c-button-font']}>{global.i18n.t('list_select_range')}</Text>
           </Button>
         </View>
         <TouchableOpacity onPress={handleSelectAll} style={styles.btn}>
-          <Text color={theme['c-button-font']}>{global.i18n.t(isSelectAll ? 'list_select_unall' : 'list_select_all')}</Text>
+          <Text size={15} color={theme['c-button-font']}>{global.i18n.t(isSelectAll ? 'list_select_unall' : 'list_select_all')}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={onExitSelectMode} style={styles.btn}>
-          <Text color={theme['c-button-font']}>{global.i18n.t('list_select_cancel')}</Text>
+          <Text size={15} color={theme['c-button-font']}>{global.i18n.t('list_select_cancel')}</Text>
         </TouchableOpacity>
       </Animated.View>
     )
@@ -145,7 +144,7 @@ const styles = createStyle({
     width: '100%',
     height: '100%',
     flexDirection: 'row',
-    borderBottomWidth: BorderWidths.normal,
+    borderBottomWidth: 0,
   },
   switchBtn: {
     flexDirection: 'row',
@@ -153,8 +152,8 @@ const styles = createStyle({
   },
   btn: {
     // flex: 1,
-    paddingLeft: 18,
-    paddingRight: 18,
+    paddingLeft: 12,
+    paddingRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },

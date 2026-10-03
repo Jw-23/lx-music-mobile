@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Platform, Pressable, SafeAreaView, StyleSheet, View } from 'react-native'
+import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { setNavActiveId } from '@/core/common'
 import { useHorizontalMode } from '@/utils/hooks'
@@ -33,8 +33,8 @@ export default () => {
     return () => { global.app_event.off('changeMenuVisible', showMenu) }
   }, [])
 
-  const navigation = (
-    <View style={[wide ? styles.sidebar : styles.tabs, { backgroundColor: colors.surface, borderColor: colors.separator }]}>
+  const navigationContent = (
+    <>
       {wide ? <Text size={24} style={styles.brand}>LX Music</Text> : null}
       {tabs.map(tab => {
         const selected = active === tab.id
@@ -43,15 +43,18 @@ export default () => {
           <Text size={wide ? 17 : 10} color={selected ? colors.accent : colors.secondary} style={wide ? styles.sidebarLabel : styles.tabLabel}>{t(tab.title)}</Text>
         </Pressable>
       })}
-    </View>
+    </>
   )
+  const navigation = wide
+    ? <ScrollView style={[styles.sidebar, { backgroundColor: colors.surface, borderColor: colors.separator }]} contentContainerStyle={{ padding: 16 }}>{navigationContent}</ScrollView>
+    : <View style={[styles.tabs, { backgroundColor: colors.surface, borderColor: colors.separator }]}>{navigationContent}</View>
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface, paddingTop: Platform.OS === 'android' ? statusHeight : 0 }]}>
       <StatusBar />
       <View style={[styles.body, wide ? styles.row : null, { backgroundColor: colors.background }]}>
         {wide ? navigation : null}
         <View style={styles.content}>
-          {active !== 'nav_love' ? <View style={styles.header}>
+          {active !== 'nav_love' && active !== 'nav_setting' ? <View style={styles.header}>
             <Text size={design.type.largeTitle} style={styles.title} accessibilityRole="header">{t(tabs.find(tab => tab.id === active)!.title)}</Text>
             {active === 'nav_search' ? <SearchTypeSelector /> : null}
           </View> : null}
@@ -74,8 +77,8 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, minHeight: 60, paddingHorizontal: 6 },
   tab: { flex: 1, minHeight: 56, alignItems: 'center', justifyContent: 'center', paddingVertical: 7 },
   tabLabel: { marginTop: 4, fontWeight: '500' },
-  sidebar: { width: 210, padding: 16, borderRightWidth: StyleSheet.hairlineWidth },
-  brand: { fontWeight: '700', marginVertical: 24, paddingLeft: 12 },
+  sidebar: { width: 210, flexGrow: 0, flexShrink: 0, borderRightWidth: StyleSheet.hairlineWidth },
+  brand: { fontWeight: '700', marginVertical: 16, paddingLeft: 12 },
   sidebarItem: { minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderRadius: 12, marginBottom: 6 },
   sidebarLabel: { marginLeft: 14, fontWeight: '500' },
 })

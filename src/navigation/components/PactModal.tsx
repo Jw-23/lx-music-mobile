@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from 'react'
-import { View, ScrollView, Alert } from 'react-native'
+import { View, ScrollView } from 'react-native'
 import { Navigation } from 'react-native-navigation'
 
 import Button from '@/components/common/Button'
-import { createStyle, openUrl } from '@/utils/tools'
+import { createStyle, openUrl, tipDialog } from '@/utils/tools'
 import { useSettingValue } from '@/store/setting/hook'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
@@ -33,7 +33,7 @@ const Content = () => {
 
   return (
     <View style={styles.main}>
-      <Text style={styles.title} size={18} >许可协议</Text>
+      <Text style={styles.title} size={22} >许可协议</Text>
       <ScrollView style={styles.content} keyboardShouldPersistTaps={'always'}>
         {!settingState.setting['common.isAgreePact'] && <Text selectable style={styles.bold} >在使用本软件前，你（使用者）需签署本协议才可继续使用！{'\n'}</Text>}
         <Text selectable style={styles.text} >本项目基于 <Text onPress={openLicensePage} style={textLinkStyle}>Apache License 2.0</Text> 许可证发行，以下协议是对于 Apache License 2.0 的补充，如有冲突，以以下协议为准。{'\n'}</Text>
@@ -82,17 +82,14 @@ const Footer = ({ componentId }: { componentId: string }) => {
     void Navigation.dismissOverlay(componentId)
     if (!_isAgreePact) {
       setTimeout(() => {
-        Alert.alert(
-          '',
-          Buffer.from('e69cace8bdafe4bbb6e5ae8ce585a8e5858de8b4b9e4b894e5bc80e6ba90efbc8ce5a682e69e9ce4bda0e698afe88ab1e992b1e8b4ade4b9b0e79a84efbc8ce8afb7e79bb4e68ea5e7bb99e5b7aee8af84efbc810a0a5468697320736f667477617265206973206672656520616e64206f70656e20736f757263652e', 'hex').toString(),
-          [{
-            text: Buffer.from('e5a5bde79a8420284f4b29', 'hex').toString(),
-            onPress: () => {
-              void checkUpdate()
-              void initDeeplink()
-            },
-          }],
-        )
+        void tipDialog({
+          message: Buffer.from('e69cace8bdafe4bbb6e5ae8ce585a8e5858de8b4b9e4b894e5bc80e6ba90efbc8ce5a682e69e9ce4bda0e698afe88ab1e992b1e8b4ade4b9b0e79a84efbc8ce8afb7e79bb4e68ea5e7bb99e5b7aee8af84efbc810a0a5468697320736f667477617265206973206672656520616e64206f70656e20736f757263652e', 'hex').toString(),
+          btnText: Buffer.from('e5a5bde79a8420284f4b29', 'hex').toString(),
+          bgClose: false,
+        }).then(() => {
+          void checkUpdate()
+          void initDeeplink()
+        })
       }, 2e3)
     }
   }
@@ -186,12 +183,14 @@ const styles = createStyle({
     marginBottom: 10,
   },
   text: {
-    fontSize: 14,
+    fontSize: 17,
+    lineHeight: 25,
     textAlignVertical: 'bottom',
     marginBottom: 5,
   },
   bold: {
-    fontSize: 14,
+    fontSize: 17,
+    lineHeight: 25,
     textAlignVertical: 'bottom',
     fontWeight: 'bold',
   },
@@ -216,7 +215,7 @@ const styles = createStyle({
     paddingLeft: 10,
     paddingRight: 10,
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: 12,
     marginRight: 15,
   },
 })

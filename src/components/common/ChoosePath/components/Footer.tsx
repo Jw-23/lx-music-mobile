@@ -1,45 +1,17 @@
 import { memo } from 'react'
-import { View, StyleSheet } from 'react-native'
-import Button from '@/components/common/Button'
+import { Pressable, StyleSheet, View } from 'react-native'
 import Text from '@/components/common/Text'
-import { useTheme } from '@/store/theme/hook'
+import { useDesignColors } from '@/theme/design'
 import { useI18n } from '@/lang'
-
-export default memo(({ onConfirm, onHide, dirOnly }: {
-  onConfirm: () => void
-  onHide: () => void
-  dirOnly: boolean
-}) => {
+export default memo(({ onConfirm, onHide, dirOnly }: { onConfirm: () => void, onHide: () => void, dirOnly: boolean }) => {
+  const colors = useDesignColors()
   const t = useI18n()
-  const theme = useTheme()
-
-  return (
-    <View style={{ ...styles.footer, backgroundColor: theme['c-content-background'] }}>
-      <Button style={{ ...styles.footerBtn, width: dirOnly ? '50%' : '100%' }} onPress={onHide}>
-        <Text color={theme['c-button-font']}>{t('cancel')}</Text>
-      </Button>
-      {dirOnly
-        ? <Button style={styles.footerBtn} onPress={onConfirm}>
-            <Text color={theme['c-button-font']}>{t('confirm')}</Text>
-          </Button>
-        : null
-      }
-    </View>
-  )
+  return <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.separator }]}>
+    <Pressable style={styles.button} onPress={onHide} accessibilityRole="button"><Text size={17} color={colors.accent}>{t('cancel')}</Text></Pressable>
+    {dirOnly ? <Pressable style={[styles.button, { borderRadius: 12, backgroundColor: colors.accent }]} onPress={onConfirm} accessibilityRole="button"><Text size={17} color="#FFFFFF" style={{ fontWeight: '600' }}>{t('confirm')}</Text></Pressable> : null}
+  </View>
 })
-
 const styles = StyleSheet.create({
-  footer: {
-    flexGrow: 0,
-    flexShrink: 0,
-    flexDirection: 'row',
-    // borderTopWidth: BorderWidths.normal,
-    elevation: 8,
-  },
-  footerBtn: {
-    width: '50%',
-    paddingTop: 16,
-    paddingBottom: 16,
-    alignItems: 'center',
-  },
+  footer: { flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 12, gap: 16, borderTopWidth: StyleSheet.hairlineWidth },
+  button: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
 })

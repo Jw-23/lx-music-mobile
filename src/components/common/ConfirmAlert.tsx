@@ -1,56 +1,9 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react'
-import { View, ScrollView } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Dialog, { type DialogType } from './Dialog'
-import Button from './Button'
-import { createStyle } from '@/utils/tools'
-import { useI18n } from '@/lang/index'
-import { useTheme } from '@/store/theme/hook'
+import { useI18n } from '@/lang'
+import { useDesignColors } from '@/theme/design'
 import Text from './Text'
-
-const styles = createStyle({
-  main: {
-    // flexGrow: 0,
-    flexShrink: 1,
-    marginTop: 15,
-    marginLeft: 5,
-    marginRight: 5,
-    marginBottom: 25,
-  },
-  content: {
-    flexGrow: 0,
-    paddingLeft: 10,
-    paddingRight: 10,
-  },
-  btns: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingBottom: 15,
-    // paddingRight: 15,
-  },
-  btnsDirection: {
-    paddingLeft: 15,
-  },
-  btnsReversedDirection: {
-    paddingLeft: 15,
-    flexDirection: 'row-reverse',
-  },
-  btn: {
-    flex: 1,
-    paddingTop: 9,
-    paddingBottom: 9,
-    paddingLeft: 10,
-    paddingRight: 10,
-    alignItems: 'center',
-    borderRadius: 4,
-  },
-  btnDirection: {
-    marginRight: 15,
-  },
-  btnReversedDirection: {
-    marginLeft: 15,
-  },
-})
-
 export interface ConfirmAlertProps {
   onCancel?: () => void
   onHide?: () => void
@@ -67,60 +20,25 @@ export interface ConfirmAlertProps {
   reverseBtn?: boolean
   children?: React.ReactNode | React.ReactNode[]
 }
-
-export interface ConfirmAlertType {
-  setVisible: (visible: boolean) => void
-}
-
-export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
-  onHide,
-  onCancel,
-  onConfirm = () => {},
-  keyHide,
-  bgHide,
-  closeBtn,
-  title = '',
-  text = '',
-  cancelText = '',
-  confirmText = '',
-  showConfirm = true,
-  disabledConfirm = false,
-  children,
-  reverseBtn = false,
-}: ConfirmAlertProps, ref) => {
-  const theme = useTheme()
+export interface ConfirmAlertType { setVisible: (visible: boolean) => void }
+export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({ onHide, onCancel, onConfirm = () => {}, keyHide, bgHide, closeBtn = false, title = '', text = '', cancelText = '', confirmText = '', showConfirm = true, disabledConfirm = false, children, reverseBtn = false }, ref) => {
   const t = useI18n()
-
-  const dialogRef = useRef<DialogType>(null)
-
-  useImperativeHandle(ref, () => ({
-    setVisible(visible: boolean) {
-      dialogRef.current?.setVisible(visible)
-    },
-  }))
-
-  const handleCancel = () => {
-    onCancel?.()
-    dialogRef.current?.setVisible(false)
-  }
-
-  return (
-    <Dialog onHide={onHide} keyHide={keyHide} bgHide={bgHide} closeBtn={closeBtn} title={title} ref={dialogRef}>
-      <View style={styles.main}>
-        <ScrollView style={styles.content} keyboardShouldPersistTaps={'always'}>
-          {children ?? <Text>{text}</Text>}
-        </ScrollView>
-      </View>
-      <View style={{ ...styles.btns, ...(reverseBtn ? styles.btnsReversedDirection : styles.btnsDirection) }}>
-        <Button style={{ ...styles.btn, ...(reverseBtn ? styles.btnReversedDirection : styles.btnDirection), backgroundColor: theme['c-button-background'] }} onPress={handleCancel}>
-          <Text color={theme['c-button-font']}>{cancelText || t('cancel')}</Text>
-        </Button>
-        {showConfirm
-          ? <Button style={{ ...styles.btn, ...(reverseBtn ? styles.btnReversedDirection : styles.btnDirection), backgroundColor: theme['c-button-background'] }} onPress={onConfirm} disabled={disabledConfirm}>
-              <Text color={theme['c-button-font']}>{confirmText || t('confirm')}</Text>
-            </Button>
-          : null}
-      </View>
-    </Dialog>
-  )
+  const colors = useDesignColors()
+  const dialog = useRef<DialogType>(null)
+  useImperativeHandle(ref, () => ({ setVisible(visible) { dialog.current?.setVisible(visible) } }))
+  const cancel = () => { dialog.current?.setVisible(false); onCancel?.() }
+  return <Dialog ref={dialog} presentation="alert" onHide={onHide} keyHide={keyHide} bgHide={bgHide} closeBtn={closeBtn} title={title}>
+    <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {children ?? <Text size={17} style={{ textAlign: 'center', lineHeight: 25 }}>{text}</Text>}
+    </ScrollView>
+    <View style={[styles.buttons, { borderTopColor: colors.separator, flexDirection: reverseBtn ? 'row-reverse' : 'row' }]}>
+      <Pressable onPress={cancel} accessibilityRole="button" style={({ pressed }) => [styles.button, pressed && { backgroundColor: colors.secondarySurface }]}><Text size={17} color={colors.accent} style={{ textAlign: 'center' }}>{cancelText || t('cancel')}</Text></Pressable>
+      {showConfirm ? <Pressable onPress={onConfirm} disabled={disabledConfirm} accessibilityRole="button" style={({ pressed }) => [styles.button, { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.separator, opacity: disabledConfirm ? 0.4 : 1 }, pressed && { backgroundColor: colors.secondarySurface }]}><Text size={17} color={colors.accent} style={{ fontWeight: '600', textAlign: 'center' }}>{confirmText || t('confirm')}</Text></Pressable> : null}
+    </View>
+  </Dialog>
+})
+const styles = StyleSheet.create({
+  content: { padding: 24 },
+  buttons: { borderTopWidth: StyleSheet.hairlineWidth, flexShrink: 0 },
+  button: { flex: 1, minHeight: 50, padding: 12, alignItems: 'center', justifyContent: 'center' },
 })

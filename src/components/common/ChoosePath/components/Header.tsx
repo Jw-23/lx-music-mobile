@@ -67,7 +67,7 @@ export default memo(({
       }} onStartShouldSetResponder={() => true}>
         <View style={styles.titleContent}>
           <Text color={theme['c-primary-font']} numberOfLines={1}>{title}</Text>
-          <Text style={styles.subTitle} color={theme['c-primary-font']} size={13} numberOfLines={1}>{path}</Text>
+          <Text style={styles.subTitle} color={theme['c-font-label']} size={13} numberOfLines={1}>{path}</Text>
         </View>
         <View style={styles.actions}>
           <TouchableOpacity style={styles.actionBtn} onPress={openStorage}>
@@ -92,10 +92,10 @@ const styles = createStyle({
     flexGrow: 0,
     flexShrink: 0,
     flexDirection: 'row',
-    paddingLeft: 15,
-    paddingRight: 15,
+    paddingLeft: 20,
+    paddingRight: 12,
     alignItems: 'center',
-    elevation: 2,
+    minHeight: 76,
     zIndex: 2,
     // borderBottomWidth: BorderWidths.normal,
   },
@@ -119,8 +119,10 @@ const styles = createStyle({
   actionBtn: {
     paddingTop: 8,
     paddingBottom: 8,
-    paddingLeft: 6,
-    paddingRight: 6,
+    minWidth: 44,
+    minHeight: 44,
+    paddingLeft: 8,
+    paddingRight: 8,
     marginLeft: 10,
   },
   newFolderContent: {
@@ -134,7 +136,7 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 240,
-    borderRadius: 4,
+    borderRadius: 12,
     paddingTop: 2,
     paddingBottom: 2,
   },

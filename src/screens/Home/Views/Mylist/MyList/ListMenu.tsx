@@ -144,6 +144,8 @@ export default forwardRef<ListMenuType, ListMenuProps>(({
       ? <Menu
           ref={menuRef}
           menus={menus}
+          title={selectInfoRef.current.listInfo?.name}
+          presentation="actions"
           onPress={handleMenuPress}
           width={menuItemWidth}
         />

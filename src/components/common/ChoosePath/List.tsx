@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react'
-import { View } from 'react-native'
+import { SafeAreaView } from 'react-native'
+import { useStatusbarHeight } from '@/store/common/hook'
 import { externalStorageDirectoryPath, readDir } from '@/utils/fs'
 import { createStyle, toast } from '@/utils/tools'
 // import { useTranslation } from '@/plugins/i18n'
@@ -94,6 +95,7 @@ export default forwardRef<ListType, ListProps>(({
   const [isReading, setIsReading] = useState(false)
   const modalRef = useRef<ModalType>(null)
   const theme = useTheme()
+  const statusHeight = useStatusbarHeight()
 
   useImperativeHandle(ref, () => ({
     show(title, dir = '', dirOnly = false, filter) {
@@ -174,7 +176,7 @@ export default forwardRef<ListType, ListProps>(({
 
   return (
     <Modal ref={modalRef} bgHide={false} statusBarPadding={false}>
-      <View style={{ ...styles.container, backgroundColor: theme['c-content-background'] }}>
+      <SafeAreaView style={{ ...styles.container, paddingTop: statusHeight, backgroundColor: theme['c-content-background'] }}>
         <Header
           onRefreshDir={async(path) => readDir(path, readOptions.current.dirOnly, readOptions.current.filter, true)}
           onOpenDir={async(path) => readDir(path, readOptions.current.dirOnly, readOptions.current.filter, false, true)}
@@ -182,7 +184,7 @@ export default forwardRef<ListType, ListProps>(({
           path={path} />
         <Main list={list} toParentDir={toParentDir} onSetPath={onSetPath} loading={isReading} />
         <Footer onConfirm={handleConfirm} onHide={handleHide} dirOnly={readOptions.current.dirOnly} />
-      </View>
+      </SafeAreaView>
     </Modal>
   )
 })

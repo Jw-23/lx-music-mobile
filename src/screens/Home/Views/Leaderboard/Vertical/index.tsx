@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { createStyle } from '@/utils/tools'
 
@@ -16,12 +16,14 @@ import settingState from '@/store/setting/state'
 import { getBoardsList } from '@/core/leaderboard'
 import { COMPONENT_IDS } from '@/config/constant'
 import { handleCollect, handlePlay } from '../listAction'
+import { type BoardItem } from '@/store/leaderboard/state'
 import boardState from '@/store/leaderboard/state'
 
 
 const MAX_WIDTH = scaleSizeW(200)
 
 export default () => {
+  const [boards, setBoards] = useState<BoardItem[]>([])
   const drawer = useRef<DrawerLayoutFixedType>(null)
   const theme = useTheme()
   const musicListRef = useRef<MusicListType>(null)
@@ -67,6 +69,8 @@ export default () => {
   const onSourceChange: HeaderBarProps['onSourceChange'] = (source) => {
     boundInfo.current.source = source
     void getBoardsList(source).then(list => {
+      if (isUnmountedRef.current || boundInfo.current.source !== source || !list.length) return
+      setBoards(list)
       const id = list[0].id
       const name = list[0].name
       requestAnimationFrame(() => {
@@ -83,6 +87,8 @@ export default () => {
     return (
       <BoardsList
         ref={boardsListRef}
+        initialList={boards}
+        activeId={boundInfo.current.id ?? ''}
         onBoundChange={onBoundChange}
         onCollect={onCollect}
         onPlay={onPlay}
@@ -105,6 +111,8 @@ export default () => {
       boundInfo.current.source = source
       boundInfo.current.id = boardId
       void getBoardsList(source).then(list => {
+        if (isUnmountedRef.current || boundInfo.current.source !== source) return
+        setBoards(list)
         const bound = list.find(l => l.id == boardId)
         boardsListRef.current?.setList(list, boardId)
         headerBarRef.current?.setBound(source, boardId, bound?.name ?? 'Unknown')
@@ -122,6 +130,7 @@ export default () => {
   return (
     <DrawerLayoutFixed
       ref={drawer}
+      navigationTitle={global.i18n.t('library_charts')}
       visibleNavNames={[COMPONENT_IDS.home]}
       // drawerWidth={width}
       widthPercentage={0.82}

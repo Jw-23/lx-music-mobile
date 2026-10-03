@@ -1,5 +1,4 @@
-import { useTheme } from '@/store/theme/hook'
-import { useMemo, useRef, useImperativeHandle, forwardRef } from 'react'
+import { useRef, useImperativeHandle, forwardRef } from 'react'
 import { Pressable, type PressableProps, StyleSheet, type View, type ViewProps } from 'react-native'
 // import { AppColors } from '@/theme'
 
@@ -17,14 +16,8 @@ export interface BtnType {
   measure: (callback: (x: number, y: number, width: number, height: number, pageX: number, pageY: number) => void) => void
 }
 
-export default forwardRef<BtnType, BtnProps>(({ ripple: propsRipple = {}, disabled, children, style, ...props }, ref) => {
-  const theme = useTheme()
+export default forwardRef<BtnType, BtnProps>(({ ripple, disabled, children, style, ...props }, ref) => {
   const btnRef = useRef<View>(null)
-  const ripple = useMemo(() => ({
-    color: theme['c-primary-light-200-alpha-700'],
-    ...propsRipple,
-  }), [theme, propsRipple])
-
   useImperativeHandle(ref, () => ({
     measure(callback) {
       btnRef.current?.measure(callback)
@@ -33,9 +26,8 @@ export default forwardRef<BtnType, BtnProps>(({ ripple: propsRipple = {}, disabl
 
   return (
     <Pressable
-      android_ripple={ripple}
       disabled={disabled}
-      style={StyleSheet.compose({ opacity: disabled ? 0.3 : 1 }, style)}
+      style={({ pressed }) => StyleSheet.compose({ minWidth: 44, minHeight: 44, opacity: disabled ? 0.35 : pressed ? 0.6 : 1 }, style)}
       {...props}
       ref={btnRef}
     >

@@ -1,6 +1,6 @@
 import { memo, useCallback, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
-import { useKeyboard } from '@/utils/hooks'
+import { useKeyboard, useHorizontalMode } from '@/utils/hooks'
 import { useDesignColors } from '@/theme/design'
 import { useSettingValue } from '@/store/setting/hook'
 import { useIsPlay, usePlayerMusicInfo, usePlayMusicInfo, useProgress, useStatusText } from '@/store/player/hook'
@@ -27,7 +27,11 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const status = useStatusText()
   const add = useQuickAdd()
   const [autoUpdate, setAutoUpdate] = useState(true)
-  const { progress } = useProgress(autoUpdate)
+  const [trackWidth, setTrackWidth] = useState(0)
+  const wide = useHorizontalMode()
+  const allowSeek = useSettingValue('common.allowProgressBarSeek')
+  const seek = allowSeek && !wide
+  const { progress, maxPlayTime, nowPlayTimeStr, maxPlayTimeStr } = useProgress(autoUpdate)
   const autoHide = useSettingValue('common.autoHidePlayBar')
   usePageVisible([COMPONENT_IDS.home], useCallback((visible) => { if (isHome) setAutoUpdate(visible) }, [isHome]))
   if (autoHide && keyboardShown) return null
@@ -35,6 +39,10 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
     if (music.id) navigations.pushPlayDetailScreen(commonState.componentIds.home!)
     else setNavActiveId('nav_search')
   }
+  const info = current.musicInfo
+  const local = info && ('progress' in info ? info.metadata.musicInfo : info).source === 'local'
+  const playbackStatus = Object.values(global.i18n.messages).some(message => message.lyric__load_error === status) ? '' : status
+  const subtitle = music.id ? playbackStatus || music.singer || t(local ? 'library_local_music' : 'library_now_playing') : t('library_empty_hint')
   const addMusic = () => {
     const info = current.musicInfo
     if (info) add('progress' in info ? info.metadata.musicInfo : info)
@@ -43,13 +51,16 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
     <View style={styles.row}>
       <Pressable style={styles.info} onPress={open} onLongPress={() => { if (current.listId) global.app_event.jumpListPosition() }} accessibilityRole="button" accessibilityLabel={music.id ? `${t('library_now_playing')} ${music.name}` : t('library_choose_music')}>
         <Image url={music.pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={styles.art} />
-        <View style={styles.text}><Text size={16} numberOfLines={1} style={{ fontWeight: '500' }}>{music.name || t('library_choose_music')}</Text><Text size={12} color={colors.secondary} numberOfLines={1}>{status || music.singer || t('library_empty_hint')}</Text></View>
+        <View style={styles.text}><Text size={16} numberOfLines={1} style={{ fontWeight: '500' }}>{music.name || t('library_choose_music')}</Text><Text size={12} color={colors.secondary} numberOfLines={1}>{subtitle}</Text></View>
       </Pressable>
       {music.id ? <Pressable onPress={addMusic} style={styles.button} accessibilityRole="button" accessibilityLabel={t('library_add')}><Text size={26} color={colors.accent}>+</Text></Pressable> : null}
       <Pressable disabled={!music.id} onPress={togglePlay} style={styles.button} accessibilityRole="button" accessibilityLabel={t(isPlay ? 'player_pause' : 'library_play')} accessibilityState={{ disabled: !music.id }}><Icon name={isPlay ? 'pause' : 'play'} size={23} color={colors.text} /></Pressable>
       <Pressable disabled={!music.id} onPress={async() => { try { await playNext() } catch { toast(t('library_play_failed')) } }} style={styles.button} accessibilityRole="button" accessibilityLabel={t('library_next')} accessibilityState={{ disabled: !music.id }}><Icon name="nextMusic" size={24} color={colors.text} /></Pressable>
     </View>
-    <View style={[styles.track, { backgroundColor: colors.separator }]}><View style={{ height: 2, width: `${(Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0) * 100}%`, backgroundColor: colors.accent }} /></View>
+    <Pressable disabled={!seek || !music.id || maxPlayTime <= 0} accessibilityRole={seek ? 'adjustable' : 'progressbar'} accessibilityLabel={t('library_playback_progress')} accessibilityValue={{ min: 0, max: 100, now: Math.round((Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0) * 100) }} accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]} onAccessibilityAction={({ nativeEvent }) => { if (seek && maxPlayTime > 0) global.app_event.setProgress(Math.max(0, Math.min(maxPlayTime, progress * maxPlayTime + (nativeEvent.actionName === 'increment' ? 10 : -10)))) }} onLayout={({ nativeEvent }) => { setTrackWidth(nativeEvent.layout.width) }} onPress={({ nativeEvent }) => { if (trackWidth > 0) global.app_event.setProgress(Math.max(0, Math.min(1, nativeEvent.locationX / trackWidth)) * maxPlayTime) }} style={{ marginHorizontal: 14, minHeight: seek ? 44 : 2, justifyContent: 'center' }}>
+      {seek ? <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}><Text size={11} color={colors.secondary}>{nowPlayTimeStr}</Text><Text size={11} color={colors.secondary}>{maxPlayTimeStr}</Text></View> : null}
+      <View style={[styles.track, { backgroundColor: colors.separator }]}><View style={{ height: 2, width: `${(Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0) * 100}%`, backgroundColor: colors.accent }} /></View>
+    </Pressable>
   </View>
 })
 
@@ -60,5 +71,5 @@ const styles = StyleSheet.create({
   art: { width: 42, height: 42, borderRadius: 8 },
   text: { flex: 1, paddingLeft: 12, paddingRight: 6 },
   button: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center' },
-  track: { height: 2, marginHorizontal: 14 },
+  track: { height: 2 },
 })

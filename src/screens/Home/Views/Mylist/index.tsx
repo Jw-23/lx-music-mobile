@@ -10,7 +10,7 @@ import { useNavActiveId } from '@/store/common/hook'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useDesignColors, design } from '@/theme/design'
 import { useI18n } from '@/lang'
-import { useLayout } from '@/utils/hooks'
+import { useLayout, useHorizontalMode } from '@/utils/hooks'
 import { useBackHandler } from '@/utils/hooks/useBackHandler'
 import { addListMusics, getListMusics, removeUserList, setActiveList } from '@/core/list'
 import { setNavActiveId, updateSetting } from '@/core/common'
@@ -22,8 +22,9 @@ import settingState from '@/store/setting/state'
 import playerState from '@/store/player/state'
 import listState from '@/store/list/state'
 import CollectionDetail from './CollectionDetail'
+import PlaylistManager from './MyList'
 
-type Route = 'overview' | 'recent' | 'playlist'
+type Route = 'overview' | 'recent' | 'playlist' | 'manage'
 const EMPTY_SONGS: LX.Music.MusicInfo[] = []
 
 const Artwork = ({ songs, size, favorite = false }: { songs: LX.Music.MusicInfo[], size: number, favorite?: boolean }) => {
@@ -35,6 +36,7 @@ const Artwork = ({ songs, size, favorite = false }: { songs: LX.Music.MusicInfo[
 }
 
 export default () => {
+  const wide = useHorizontalMode()
   const lists = useMyList()
   const activeId = useActiveListId()
   const navId = useNavActiveId()
@@ -44,6 +46,7 @@ export default () => {
   const t = useI18n()
   const { width, onLayout } = useLayout()
   const [route, setRoute] = useState<Route>('overview')
+  const managerOrigin = useRef<Route>('overview')
   const [query, setQuery] = useState('')
   const [songsByList, setSongsByList] = useState<Record<string, LX.Music.MusicInfo[]>>({})
   const [editorVisible, setEditorVisible] = useState(false)
@@ -82,7 +85,7 @@ export default () => {
 
   const back = useCallback(() => {
     if (navId !== 'nav_love' || route === 'overview') return false
-    setRoute('overview')
+    setRoute(route === 'manage' ? managerOrigin.current : 'overview')
     return true
   }, [navId, route])
   useBackHandler(back)
@@ -116,11 +119,14 @@ export default () => {
     if (!await confirmDialog({ message: t('library_delete_confirm', { name: list.name }) })) return
     try { await removeUserList([list.id]); setRoute('overview') } catch { toast(t('library_save_failed')) }
   }
-  const manage = () => {
-    if (!activeId) setActiveList(LIST_IDS.LOVE)
-    setRoute('playlist')
-    requestAnimationFrame(() => requestAnimationFrame(() => { global.app_event.changeLoveListVisible(true) }))
-  }
+  const manage = () => { managerOrigin.current = 'overview'; setRoute('manage') }
+  useEffect(() => {
+    const showManager = (visible: boolean) => {
+      if (visible) { managerOrigin.current = route === 'overview' ? 'overview' : 'playlist'; setRoute('manage') } else setRoute('playlist')
+    }
+    global.app_event.on('changeLoveListVisible', showManager)
+    return () => { global.app_event.off('changeLoveListVisible', showManager) }
+  }, [route])
   const empty = (history: boolean) => <View style={styles.empty}>
     <Icon name={history ? 'music_time' : 'album'} size={44} color={colors.accent} />
     <Text size={22} style={styles.emptyTitle}>{t(history ? 'library_recent_empty' : 'library_no_music')}</Text>
@@ -130,10 +136,10 @@ export default () => {
 
   return (
     <View style={{ flex: 1 }} onLayout={onLayout}>
-      <View style={styles.header}>
-        {route !== 'overview' ? <Pressable style={styles.back} onPress={() => { setRoute('overview') }} accessibilityRole="button" accessibilityLabel={t('library_back')}><Icon name="chevron-left" size={20} color={colors.accent} /><Text color={colors.accent} size={17}>{t('library_title')}</Text></Pressable> : null}
-        <View style={styles.heading}>
-          <Text size={route === 'overview' ? design.type.largeTitle : 28} style={styles.largeTitle} accessibilityRole="header" numberOfLines={1}>{t(route === 'overview' ? 'library_title' : route === 'recent' ? 'library_recent' : 'library_playlists')}</Text>
+      <View style={[styles.header, wide && { flexDirection: 'row', alignItems: 'center', gap: 20 }]}>
+        {route !== 'overview' ? <Pressable style={styles.back} onPress={() => { setRoute(route === 'manage' ? managerOrigin.current : 'overview') }} accessibilityRole="button" accessibilityLabel={t('library_back')}><Icon name="chevron-left" size={20} color={colors.accent} /><Text color={colors.accent} size={17}>{t('library_title')}</Text></Pressable> : null}
+        <View style={[styles.heading, wide && { flex: 1 }]}>
+          <Text size={wide ? 22 : route === 'overview' ? design.type.largeTitle : 28} style={styles.largeTitle} accessibilityRole="header" numberOfLines={1}>{t(route === 'overview' ? 'library_title' : route === 'recent' ? 'library_recent' : route === 'manage' ? 'library_manage' : 'library_playlists')}</Text>
           {route === 'overview' ? <Pressable style={styles.action} onPress={create} accessibilityRole="button" accessibilityLabel={t('library_new_playlist')}><Text size={32} color={colors.accent}>+</Text></Pressable> : null}
           {route === 'recent' && recent.length ? <Pressable onPress={clearHistory} style={styles.action} accessibilityRole="button" accessibilityLabel={t('library_clear')}><Icon name="eraser" size={20} color={colors.accent} /></Pressable> : null}
         </View>
@@ -167,7 +173,7 @@ export default () => {
           <Text size={13} color={colors.secondary}>{t('library_song_count', { count: songsByList[item.id]?.length ?? 0 })}</Text>
         </Pressable>}
         ListEmptyComponent={<Text style={styles.emptyHint} color={colors.secondary}>{t('library_no_matches')}</Text>}
-      /> : route === 'recent' ? <FlatList
+      /> : route === 'manage' ? <PlaylistManager /> : route === 'recent' ? <FlatList
         data={recent} keyExtractor={entry => entry.musicInfo.id} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, flexGrow: 1 }}
         ListEmptyComponent={empty(true)}
         renderItem={({ item }) => <View style={[styles.songRow, { borderBottomColor: colors.separator }]}>
@@ -178,15 +184,17 @@ export default () => {
           <Pressable style={styles.action} onPress={() => { addRef.current?.show({ musicInfo: item.musicInfo, listId: '', isMove: false }) }} accessibilityRole="button" accessibilityLabel={`${t('library_add')} ${item.musicInfo.name}`}><Text size={26} color={colors.accent}>+</Text></Pressable>
         </View>}
       /> : <>
-        <View style={styles.playlistSummary}>
-          <Artwork songs={songs} size={80} favorite={list?.id === LIST_IDS.LOVE} />
+        <View style={wide ? { flexDirection: 'row', alignItems: 'center' } : undefined}>
+        <View style={[styles.playlistSummary, wide && { flex: 1 }]}>
+          <Artwork songs={songs} size={wide ? 48 : 80} favorite={list?.id === LIST_IDS.LOVE} />
           <View style={{ flex: 1, paddingLeft: 16 }}><Text size={22} style={styles.sectionTitle} numberOfLines={2}>{list?.name}</Text><Text size={13} color={colors.secondary}>{t('library_song_count', { count: songs.length })}</Text></View>
           {list && 'locationUpdateTime' in list ? <Pressable style={styles.action} onPress={() => { setEditingList(list); setEditorVisible(true) }} accessibilityRole="button" accessibilityLabel={t('library_rename')}><Text size={15} color={colors.accent}>{t('list_rename')}</Text></Pressable> : null}
         </View>
-        <View style={styles.playActions}>
+        <View style={[styles.playActions, wide && { width: 260, paddingHorizontal: 12, paddingBottom: 0 }]}>
           <Pressable disabled={!songs.length} onPress={async() => playPlaylist()} accessibilityRole="button" style={[styles.playButton, { backgroundColor: colors.surface, opacity: songs.length ? 1 : 0.5 }]}><Icon name="play" size={16} color={colors.accent} /><Text size={17} color={colors.accent} style={{ marginLeft: 10, fontWeight: '600' }}>{t('library_play')}</Text></Pressable>
           <Pressable disabled={!songs.length} onPress={async() => playPlaylist(true)} accessibilityRole="button" style={[styles.playButton, { backgroundColor: colors.surface, opacity: songs.length ? 1 : 0.5 }]}><Icon name="list-random" size={20} color={colors.accent} /><Text size={17} color={colors.accent} style={{ marginLeft: 10, fontWeight: '600' }}>{t('library_shuffle')}</Text></Pressable>
           {list && 'locationUpdateTime' in list ? <Pressable style={styles.action} onPress={deletePlaylist} accessibilityRole="button" accessibilityLabel={t('library_delete_playlist')}><Icon name="remove" size={20} color={colors.destructive} /></Pressable> : null}
+        </View>
         </View>
         <View style={{ flex: 1 }}>
           <CollectionDetail />

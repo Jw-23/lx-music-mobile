@@ -7,7 +7,6 @@ import Input, { type InputType } from '@/components/common/Input'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
-import { BorderWidths } from '@/theme'
 
 interface SearchInputProps {
   onSearch: (keywork: string) => void
@@ -25,7 +24,7 @@ const SearchInput = forwardRef<SearchInputType, SearchInputProps>(({ onSearch },
   return (
     <Input
       onChangeText={handleChangeText}
-      placeholder="Search for something..."
+      placeholder={global.i18n.t('library_search')}
       value={text}
       style={styles.input}
       // onFocus={showTipList}
@@ -150,7 +149,7 @@ const styles = createStyle({
     height: '100%',
     flexDirection: 'row',
     paddingLeft: 10,
-    borderBottomWidth: BorderWidths.normal,
+    borderBottomWidth: 0,
   },
   content: {
     flexDirection: 'row',

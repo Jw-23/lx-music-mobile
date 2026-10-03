@@ -21,7 +21,7 @@ export default ({ list, loading, onSetPath, toParentDir }: {
   const fullRow = useRef({ rowNum: undefined, rowWidth: '100%' } as const)
 
   const ParentItemComponent = useMemo(() => (
-    <View style={{ backgroundColor: theme['c-primary-light-700-alpha-900'] }}>
+    <View style={{ backgroundColor: theme['c-content-background'] }}>
       <ListItem item={{
         name: '..',
         desc: t('parent_dir_name'),

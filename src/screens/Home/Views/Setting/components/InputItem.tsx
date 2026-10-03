@@ -63,7 +63,7 @@ export default memo(({ value, label, onChanged, ...props }: InputItemProps) => {
   }
   return (
     <View style={styles.container}>
-      <Text style={styles.label} size={14}>{label}</Text>
+      <Text style={styles.label} size={17}>{label}</Text>
       <Input
         value={text}
         ref={inputRef}
@@ -78,19 +78,19 @@ export default memo(({ value, label, onChanged, ...props }: InputItemProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingLeft: 25,
+    paddingHorizontal: 16,
     marginBottom: 15,
   },
   label: {
-    marginBottom: 2,
+    marginBottom: 10,
   },
   input: {
     backgroundColor: 'rgba(0,0,0,0.2)',
     flexGrow: 1,
     flexShrink: 1,
-    borderRadius: 4,
+    borderRadius: 12,
     // paddingTop: 3,
     // paddingBottom: 3,
-    maxWidth: 300,
+    width: '100%',
   },
 })

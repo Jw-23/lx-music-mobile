@@ -1,61 +1,37 @@
-import { useEffect, useRef, useState } from 'react'
-
+import { useRef, useState } from 'react'
+import { View } from 'react-native'
+import PlaylistEditor from '@/components/PlaylistEditor'
 import ListMenu, { type ListMenuType } from './ListMenu'
-import ListNameEdit, { type ListNameEditType } from './ListNameEdit'
 import List from './List'
 import ListImportExport, { type ListImportExportType } from './ListImportExport'
 import { handleRemove, handleSync } from './listAction'
 import ListMusicSort, { type ListMusicSortType } from './ListMusicSort'
 import DuplicateMusic, { type DuplicateMusicType } from './DuplicateMusic'
 
-
 export default () => {
-  const [visible, setVisible] = useState(false)
+  const [editor, setEditor] = useState(false)
+  const [editingList, setEditingList] = useState<LX.List.UserListInfo>()
+  const [position, setPosition] = useState(-1)
   const listMenuRef = useRef<ListMenuType>(null)
-  const listNameEditRef = useRef<ListNameEditType>(null)
-  const listMusicSortRef = useRef<ListMusicSortType>(null)
-  const duplicateMusicRef = useRef<DuplicateMusicType>(null)
-  const listImportExportRef = useRef<ListImportExportType>(null)
-
-  useEffect(() => {
-    let isInited = false
-    const changeVisible = (visibleList: boolean) => {
-      if (visibleList && !isInited) {
-        requestAnimationFrame(() => {
-          setVisible(true)
-        })
-        isInited = true
-      }
-    }
-    global.app_event.on('changeLoveListVisible', changeVisible)
-
-    return () => {
-      global.app_event.off('changeLoveListVisible', changeVisible)
-    }
-  }, [])
-
-  return (
-    visible
-      ? <>
-          <List onShowMenu={(info, position) => listMenuRef.current?.show(info, position)} />
-          <ListNameEdit ref={listNameEditRef} />
-          <ListMusicSort ref={listMusicSortRef} />
-          <DuplicateMusic ref={duplicateMusicRef} />
-          <ListImportExport ref={listImportExportRef} />
-          <ListMenu
-            ref={listMenuRef}
-            onNew={index => listNameEditRef.current?.showCreate(index)}
-            onRename={info => listNameEditRef.current?.show(info)}
-            onSort={info => listMusicSortRef.current?.show(info)}
-            onDuplicateMusic={info => duplicateMusicRef.current?.show(info)}
-            onImport={(info, position) => listImportExportRef.current?.import(info, position)}
-            onExport={(info, position) => listImportExportRef.current?.export(info, position)}
-            onRemove={info => { handleRemove(info) }}
-            onSync={info => { handleSync(info) }}
-            onSelectLocalFile={(info, position) => listImportExportRef.current?.selectFile(info, position)}
-          />
-          {/* <ImportExport actionType={actionType} visible={isShowChoosePath} hide={() => setShowChoosePath(false)} selectedListRef={selectedListRef} /> */}
-        </>
-      : null
-  )
+  const sortRef = useRef<ListMusicSortType>(null)
+  const duplicateRef = useRef<DuplicateMusicType>(null)
+  const importExportRef = useRef<ListImportExportType>(null)
+  const create = (index = -1) => { setEditingList(undefined); setPosition(index); setEditor(true) }
+  return <View style={{ flex: 1 }}>
+    <List onCreate={() => { create() }} onShowMenu={(info, position) => listMenuRef.current?.show(info, position)} />
+    <PlaylistEditor visible={editor} list={editingList} position={position} onClose={() => { setEditor(false) }} />
+    <ListMusicSort ref={sortRef} />
+    <DuplicateMusic ref={duplicateRef} />
+    <ListImportExport ref={importExportRef} />
+    <ListMenu ref={listMenuRef}
+      onNew={create}
+      onRename={info => { setEditingList(info); setEditor(true) }}
+      onSort={info => sortRef.current?.show(info)}
+      onDuplicateMusic={info => duplicateRef.current?.show(info)}
+      onImport={(info, index) => importExportRef.current?.import(info, index)}
+      onExport={(info, index) => importExportRef.current?.export(info, index)}
+      onRemove={handleRemove} onSync={info => { handleSync(info) }}
+      onSelectLocalFile={(info, index) => importExportRef.current?.selectFile(info, index)}
+    />
+  </View>
 }

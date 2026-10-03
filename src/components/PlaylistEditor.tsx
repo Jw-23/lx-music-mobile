@@ -8,9 +8,10 @@ import { toast } from '@/utils/tools'
 import { useDesignColors } from '@/theme/design'
 import { useI18n } from '@/lang'
 
-export default ({ visible, list, onClose, onCreated }: {
+export default ({ visible, list, position = -1, onClose, onCreated }: {
   visible: boolean
   list?: LX.List.UserListInfo
+  position?: number
   onClose: () => void
   onCreated?: (id: string) => void
 }) => {
@@ -34,7 +35,7 @@ export default ({ visible, list, onClose, onCreated }: {
       if (list) await updateUserList([{ ...list, name: value }])
       else {
         const id = `userlist_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-        await createList({ id, name: value })
+        await createList({ id, name: value, position })
         onCreated?.(id)
       }
       onClose()

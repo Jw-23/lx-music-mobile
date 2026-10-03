@@ -26,13 +26,13 @@ export default ({ name, list, onTagChange, activeId }: TagGroupProps) => {
         {list.map(item => (
           activeId == item.id
             ? (
-                <View style={{ ...styles.tagButton, backgroundColor: theme['c-button-background'] }} key={item.id}>
+                <View style={{ ...styles.tagButton, backgroundColor: theme['c-content-background'] }} key={item.id}>
                   <Text style={styles.tagButtonText} color={theme['c-primary-font-active']}>{item.name}</Text>
                 </View>
               )
             : (
                 <Button
-                  style={{ ...styles.tagButton, backgroundColor: theme['c-button-background'] }}
+                  style={{ ...styles.tagButton, backgroundColor: theme['c-content-background'] }}
                   key={item.id}
                   onPress={() => { onTagChange(item.name, item.id) }}
                 >
@@ -57,15 +57,15 @@ const styles = createStyle({
   },
   tagButton: {
     // marginRight: 10,
-    borderRadius: 4,
+    borderRadius: 12,
     marginRight: 10,
     marginBottom: 10,
   },
   tagButtonText: {
-    fontSize: 13,
+    fontSize: 17,
     paddingLeft: 12,
     paddingRight: 12,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
 })

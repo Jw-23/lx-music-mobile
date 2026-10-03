@@ -161,7 +161,7 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
 
   return (
     visible
-      ? <Menu ref={menuRef} menus={menus} onPress={handleMenuPress} />
+      ? <Menu ref={menuRef} title={selectInfoRef.current.musicInfo?.name} presentation="actions" menus={menus} onPress={handleMenuPress} />
       : null
   )
 })

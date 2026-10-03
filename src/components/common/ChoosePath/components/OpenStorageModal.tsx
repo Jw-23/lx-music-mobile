@@ -139,7 +139,7 @@ export default forwardRef<OpenDirModalType, { onOpenDir: (dir: string) => Promis
             paths.map(path => {
               return (
                 <Button style={styles.pathBtn} key={path} onPress={() => inputRef.current?.setPath(path)}>
-                  <Text size={12}>{path}</Text>
+                  <Text size={13}>{path}</Text>
                 </Button>
               )
             })
@@ -149,10 +149,10 @@ export default forwardRef<OpenDirModalType, { onOpenDir: (dir: string) => Promis
               return (
                 <View style={styles.listContentItem} key={path}>
                   <Button style={styles.pathBtn} onPress={() => inputRef.current?.setPath(path)}>
-                    <Text size={12}>{path}</Text>
+                    <Text size={13}>{path}</Text>
                   </Button>
                   <Button style={styles.removeBtn} onPress={() => { removeSelectStoragePath(path) }}>
-                    <Icon color={theme['c-font-label']} name="close" size={12} />
+                    <Icon color={theme['c-font-label']} name="close" size={13} />
                   </Button>
                 </View>
               )
@@ -160,10 +160,10 @@ export default forwardRef<OpenDirModalType, { onOpenDir: (dir: string) => Promis
           }
         </View>
         <View style={styles.tips}>
-          <Text style={styles.tip} size={12}>
+          <Text style={styles.tip} size={13}>
             {global.i18n.t('open_storage_select_path_tip')}
           </Text>
-          <ButtonPrimary style={styles.btn} size={12} onPress={handleSelectStorage}>{global.i18n.t('open_storage_select_path')}</ButtonPrimary>
+          <ButtonPrimary style={styles.btn} size={13} onPress={handleSelectStorage}>{global.i18n.t('open_storage_select_path')}</ButtonPrimary>
         </View>
       </View>
     </ConfirmAlert>
@@ -185,7 +185,7 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 240,
-    borderRadius: 4,
+    borderRadius: 12,
     paddingTop: 3,
     paddingBottom: 3,
     height: 'auto',

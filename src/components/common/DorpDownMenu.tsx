@@ -39,6 +39,7 @@ export default <T extends Menus>({
       <Menu
         ref={menuRef}
         menus={menus}
+        presentation="selection"
         center={center}
         onPress={onPress}
         fontSize={fontSize}

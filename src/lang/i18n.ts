@@ -82,6 +82,7 @@ const createI18n = (_locale: Langs = locale): I18n => {
     },
     getMessage(key: keyof Message, val?: TranslateValues): string {
       let targetMessage = this.message[key] ?? this.messages[this.fallbackLocale][key] ?? ''
+      if (val?.count === 1) targetMessage = this.message[`${key}_one` as keyof Message] ?? targetMessage
       return val ? this.fillMessage(targetMessage, val) : targetMessage
     },
     t(key: keyof Message, val?: TranslateValues): string {

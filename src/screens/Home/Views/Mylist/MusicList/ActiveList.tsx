@@ -2,7 +2,6 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'r
 import { TouchableOpacity } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
-import { BorderWidths } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
 import { useActiveListId, useListFetching } from '@/store/list/hook'
 import listState from '@/store/list/state'
@@ -61,9 +60,9 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onShowSearchBar, o
 
   return (
     <TouchableOpacity onPress={showList} onLongPress={onScrollToTop} style={{ ...styles.currentList, opacity: visibleBar ? 1 : 0, borderBottomColor: theme['c-border-background'] }}>
-      <Icon style={styles.currentListIcon} color={theme['c-button-font']} name="chevron-right" size={12} />
+      <Icon style={styles.currentListIcon} color={theme['c-button-font']} name="album" size={18} />
       { fetching ? <Loading color={theme['c-button-font']} style={styles.loading} /> : null }
-      <Text style={styles.currentListText} numberOfLines={1} color={theme['c-button-font']}>{currentListName}</Text>
+      <Text style={styles.currentListText} size={17} numberOfLines={1} color={theme['c-button-font']}>{global.i18n.t('library_manage')}<Text size={13} color={theme['c-font-label']}> · {currentListName}</Text></Text>
       <TouchableOpacity style={styles.currentListBtns} onPress={onShowSearchBar}>
         <Icon color={theme['c-button-font']} name="search-2" />
       </TouchableOpacity>
@@ -76,13 +75,13 @@ const styles = createStyle({
   currentList: {
     flexDirection: 'row',
     paddingRight: 2,
-    height: 48,
+    height: 56,
     alignItems: 'center',
-    borderBottomWidth: BorderWidths.normal,
+    borderBottomWidth: 0,
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   currentListIcon: {
-    paddingLeft: 15,
+    paddingLeft: 20,
     paddingRight: 10,
     // paddingTop: 10,
     // paddingBottom: 0,

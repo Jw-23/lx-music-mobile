@@ -1,10 +1,9 @@
 import { memo } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
-import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
-import { type RowInfo, createStyle } from '@/utils/tools'
-
+import { type RowInfo } from '@/utils/tools'
+import { useDesignColors } from '@/theme/design'
 export interface PathItem {
   name: string
   path: string
@@ -15,85 +14,16 @@ export interface PathItem {
   sizeText?: string
   disabled?: boolean
 }
-
-export default memo(({ item, onPress, rowInfo }: {
-  item: PathItem
-  onPress: (item: PathItem) => void
-  rowInfo: RowInfo
-}) => {
-  const theme = useTheme()
-
-  // const moreButtonRef = useRef()
-  // const handleShowMenu = useCallback(() => {
-  //   if (moreButtonRef.current && moreButtonRef.current.measure) {
-  //     moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
-  //       // console.log(fx, fy, width, height, px, py)
-  //       showMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
-  //     })
-  //   }
-  // }, [item, index, showMenu])
-
-  return (
-    <View style={{ ...styles.listItem, width: rowInfo.rowWidth }} onStartShouldSetResponder={() => true}>
-      {
-        item.disabled ? (
-          <View style={{ ...styles.listItem, opacity: 0.3 }}>
-            <View style={styles.itemInfo}>
-              <Text style={styles.listItemTitleText}>{item.name}</Text>
-              <Text style={styles.listItemDesc} size={12} color={theme['c-font-label']} numberOfLines={1}>{item.mtime ? new Date(item.mtime).toLocaleString() : item.desc}</Text>
-            </View>
-            {
-              item.isDir ? null
-                : <Text style={styles.size} size={12} color={theme['c-font-label']}>{item.sizeText}</Text>
-            }
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.listItem} onPress={ () => { onPress(item) } }>
-            <View style={styles.itemInfo}>
-              <Text style={styles.listItemTitleText}>{item.name}</Text>
-              <Text style={styles.listItemDesc} size={12} color={theme['c-font-label']} numberOfLines={1}>{item.mtime ? new Date(item.mtime).toLocaleString() : item.desc}</Text>
-            </View>
-            {
-              item.isDir
-                ? <Icon name="chevron-right" color={theme['c-primary-light-100-alpha-600']} size={18} />
-                : <Text style={styles.size} size={12} color={theme['c-font-label']}>{item.sizeText}</Text>
-            }
-          </TouchableOpacity>
-        )
-      }
-    </View>
-  )
+export default memo(({ item, onPress, rowInfo }: { item: PathItem, onPress: (item: PathItem) => void, rowInfo: RowInfo }) => {
+  const colors = useDesignColors()
+  return <Pressable style={({ pressed }) => [styles.row, { width: rowInfo.rowWidth, opacity: item.disabled ? 0.4 : 1, backgroundColor: pressed ? colors.secondarySurface : colors.surface, borderBottomColor: colors.separator }]} disabled={item.disabled} onPress={() => { onPress(item) }} accessibilityRole="button" accessibilityLabel={item.name === '..' ? item.desc : item.name}>
+    <View style={[styles.icon, { backgroundColor: colors.secondarySurface }]}><Icon name={item.isDir ? 'add_folder' : 'album'} size={22} color={colors.accent} /></View>
+    <View style={styles.text}><Text size={17} numberOfLines={2}>{item.name === '..' ? item.desc : item.name}</Text><Text size={13} color={colors.secondary} numberOfLines={1}>{item.mtime ? new Date(item.mtime).toLocaleString() : item.name === '..' ? '' : item.desc}</Text></View>
+    {item.isDir ? <Icon name="chevron-right" color={colors.secondary} size={12} /> : <Text size={13} color={colors.secondary}>{item.sizeText}</Text>}
+  </Pressable>
 })
-
-const styles = createStyle({
-  listItem: {
-    width: '100%',
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    paddingLeft: 10,
-    paddingRight: 10,
-    alignItems: 'center',
-    // backgroundColor: 'rgba(0,0,0,0.1)',
-  },
-  itemInfo: {
-    flexGrow: 1,
-    flexShrink: 1,
-    paddingTop: 10,
-    paddingBottom: 10,
-  },
-  listItemTitleText: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    // backgroundColor: 'rgba(0,0,0,0.2)',
-    flexGrow: 0,
-    flexShrink: 1,
-  },
-  listItemDesc: {
-    paddingTop: 2,
-  },
-  size: {
-    alignSelf: 'flex-end',
-    marginBottom: 10,
-  },
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 72, paddingHorizontal: 20, paddingVertical: 12, gap: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  icon: { width: 40, height: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  text: { flex: 1, gap: 4 },
 })
-

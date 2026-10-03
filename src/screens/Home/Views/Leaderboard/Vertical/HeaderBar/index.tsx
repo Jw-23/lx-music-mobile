@@ -5,14 +5,11 @@ import { View } from 'react-native'
 // import Tag from './Tag'
 // import OpenList from './OpenList'
 import { createStyle } from '@/utils/tools'
-// import { BorderWidths } from '@/theme'
 import SourceSelector, {
   type SourceSelectorType,
 } from './SourceSelector'
 import { useTheme } from '@/store/theme/hook'
-// import { BorderWidths } from '@/theme'
 import ActiveListName, { type ActiveListNameType } from './ActiveListName'
-import { BorderWidths } from '@/theme'
 
 export interface HeaderBarProps {
   onShowBound: () => void
@@ -48,10 +45,11 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onShowBound, onSourc
 const styles = createStyle({
   currentList: {
     flexDirection: 'row',
-    height: 38,
+    height: 56,
+    paddingHorizontal: 12,
     zIndex: 2,
     // paddingRight: 10,
-    borderBottomWidth: BorderWidths.normal,
+    borderBottomWidth: 0,
   },
   selector: {
     width: 86,

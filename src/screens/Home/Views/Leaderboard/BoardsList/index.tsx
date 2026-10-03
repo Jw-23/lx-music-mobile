@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import List, { type ListType, type ListProps } from './List'
 import ListMenu, { type ListMenuType, type Position } from './ListMenu'
@@ -6,6 +6,8 @@ import { type BoardItem } from '@/store/leaderboard/state'
 
 
 export interface BoardsListProps {
+  initialList?: BoardItem[]
+  activeId?: string
   onBoundChange: (listId: string) => void
   onPlay: (listId: string) => void
   onCollect: (listId: string, name: string) => void
@@ -14,9 +16,11 @@ export interface BoardsListType {
   setList: (list: BoardItem[], activeId: string) => void
 }
 
-export default forwardRef<BoardsListType, BoardsListProps>(({ onBoundChange, onPlay, onCollect }, ref) => {
+export default forwardRef<BoardsListType, BoardsListProps>(({ onBoundChange, onPlay, onCollect, initialList, activeId }, ref) => {
   const listRef = useRef<ListType>(null)
   const listMenuRef = useRef<ListMenuType>(null)
+
+  useEffect(() => { if (initialList) listRef.current?.setList(initialList, activeId ?? '') }, [initialList, activeId])
 
   useImperativeHandle(ref, () => ({
     setList(list, listId) {

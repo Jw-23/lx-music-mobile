@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { type Source } from '@/store/songlist/state'
 import settingState from '@/store/setting/state'
 import Content from './Content'
 import TagList from './TagList'
@@ -11,6 +12,7 @@ import type { InitState as CommonState } from '@/store/common/state'
 const MAX_WIDTH = scaleSizeW(560)
 
 export default () => {
+  const [selection, setSelection] = useState<{ source: Source, id: string }>({ source: 'kw', id: '' })
   const drawer = useRef<DrawerLayoutFixedType>(null)
   const theme = useTheme()
 
@@ -18,7 +20,8 @@ export default () => {
     const handleFixDrawer = (id: CommonState['navActiveId']) => {
       if (id == 'nav_songlist') drawer.current?.fixWidth()
     }
-    const handleShow = () => {
+    const handleShow = (source: Source, id: string) => {
+      setSelection({ source, id })
       requestAnimationFrame(() => {
         drawer.current?.openDrawer()
       })
@@ -38,12 +41,13 @@ export default () => {
     }
   }, [])
 
-  const navigationView = () => <TagList />
+  const navigationView = () => <TagList source={selection.source} activeId={selection.id} />
   // console.log('render drawer content')
 
   return (
     <DrawerLayoutFixed
       ref={drawer}
+      navigationTitle={global.i18n.t('songlist_tags')}
       visibleNavNames={[COMPONENT_IDS.home]}
       widthPercentage={0.8}
       widthPercentageMax={MAX_WIDTH}

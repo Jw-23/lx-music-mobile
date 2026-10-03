@@ -1,55 +1,18 @@
-import { View } from 'react-native'
-import { useTheme } from '@/store/theme/hook'
-import { createStyle } from '@/utils/tools'
-// import { useWindowSize } from '@/utils/hooks'
-const HEADER_HEIGHT = 20
+import { SafeAreaView, StyleSheet, View } from 'react-native'
+import { useDesignColors } from '@/theme/design'
 
-interface Props {
-  children: React.ReactNode
-}
-
-
-export default ({ children }: Props) => {
-  const theme = useTheme()
-
-  return (
-    <View style={{ ...styles.centeredView, backgroundColor: 'rgba(50,50,50,.3)' }}>
-      <View style={{ ...styles.modalView, backgroundColor: theme['c-content-background'] }}>
-        <View style={{ ...styles.header, backgroundColor: theme['c-primary-light-100-alpha-100'] }}></View>
-        {children}
-      </View>
+export default ({ children }: { children: React.ReactNode }) => {
+  const colors = useDesignColors()
+  return <SafeAreaView style={styles.overlay}>
+    <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+      <View style={styles.handleArea}><View style={[styles.handle, { backgroundColor: colors.secondary }]} /></View>
+      {children}
     </View>
-  )
+  </SafeAreaView>
 }
-
-
-const styles = createStyle({
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalView: {
-    maxWidth: '90%',
-    minWidth: '60%',
-    maxHeight: '78%',
-    // backgroundColor: 'white',
-    borderRadius: 4,
-    // shadowColor: '#000',
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 2,
-    // },
-    // shadowOpacity: 0.25,
-    // shadowRadius: 4,
-    elevation: 3,
-  },
-  header: {
-    flexGrow: 0,
-    flexShrink: 0,
-    flexDirection: 'row',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    height: HEADER_HEIGHT,
-  },
+const styles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)' },
+  sheet: { width: '100%', maxWidth: 640, maxHeight: '88%', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  handleArea: { height: 24, alignItems: 'center', justifyContent: 'center' },
+  handle: { height: 5, width: 36, borderRadius: 3, opacity: 0.4 },
 })
