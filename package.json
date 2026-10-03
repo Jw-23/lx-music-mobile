@@ -1,7 +1,7 @@
 {
   "name": "lx-music-mobile",
-  "version": "1.10.1",
-  "versionCode": 80,
+  "version": "1.10.2",
+  "versionCode": 81,
   "private": true,
   "scripts": {
     "dev": "react-native run-android --active-arch-only",
@@ -21,7 +21,8 @@
     "clear": "cd android && gradlew.bat clean",
     "clear:full": "git clean -fdx -e android/keystore.properties -e android/app/*.keystore",
     "build:theme": "node src/theme/themes/createThemes.js",
-    "publish": "node publish"
+    "publish": "node publish",
+    "test": "node --test tests/*.test.cjs"
   },
   "engines": {
     "node": ">= 18",

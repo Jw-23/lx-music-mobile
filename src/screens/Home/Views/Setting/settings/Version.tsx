@@ -9,7 +9,7 @@ import { sizeFormate } from '@/utils'
 import { useI18n } from '@/lang'
 import { useVersionDownloadProgressUpdated, useVersionInfo } from '@/store/version/hook'
 import Text from '@/components/common/Text'
-import { showModal } from '@/core/version'
+import { checkUpdate, showModal } from '@/core/version'
 
 const currentVer = process.versions.app
 export default memo(() => {
@@ -21,6 +21,7 @@ export default memo(() => {
   const progress = useVersionDownloadProgressUpdated()
   const handleOpenVersionModal = () => {
     // setVersionInfo({ showModal: true })
+    if (versionInfo.status !== 'downloading' && versionInfo.status !== 'checking') void checkUpdate()
     showModal()
   }
 
@@ -73,8 +74,9 @@ export default memo(() => {
             tip ? <Text size={14}>{tip}</Text> : null
           }
         </View>
+        <Text size={13} style={{ marginBottom: 12 }}>{t('version_release_source')}</Text>
         <View style={styles.btn}>
-          <Button onPress={handleOpenVersionModal}>{t('setting_version_show_ver_modal')}</Button>
+          <Button onPress={handleOpenVersionModal}>{t('version_check_now')}</Button>
         </View>
       </SubTitle>
     </Section>

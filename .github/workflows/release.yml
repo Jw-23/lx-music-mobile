@@ -44,7 +44,7 @@ jobs:
 
       - name: Validate application
         run: |
-          npm run test:recent
+          npm test
           npx tsc --noEmit
           npm run lint
 

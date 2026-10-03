@@ -3,6 +3,7 @@ import playerState from '@/store/player/state'
 
 import { getListMusicSync } from '@/utils/listManage'
 import { setProgress } from '@/core/player/progress'
+import { getPlaybackQueue, resetPlaybackQueue } from './playbackQueue'
 import { LIST_IDS } from '@/config/constant'
 
 
@@ -40,28 +41,14 @@ export const getPlayIndex = (listId: string | null, musicInfo: LX.Download.ListI
   playerPlayIndex: number
 } => {
   const { playInfo } = playerState
-  const playerList = getListMusicSync(playInfo.playerListId)
-
-  // if (listIndex < 0) throw new Error('music info not found')
-  // playInfo.playIndex = listIndex
-
-  let playIndex = -1
-  let playerPlayIndex = -1
-  if (playerList.length) {
-    playerPlayIndex = Math.min(playInfo.playerPlayIndex, playerList.length - 1)
-  }
+  const playerList = getList(playInfo.playerListId)
 
   const list = getListMusicSync(listId)
-  if (list.length && musicInfo) {
-    const currentId = musicInfo.id
-    playIndex = list.findIndex(m => m.id == currentId)
-    if (!isTempPlay) {
-      if (playIndex < 0) {
-        playerPlayIndex = playerPlayIndex < 1 ? (list.length - 1) : (playerPlayIndex - 1)
-      } else {
-        playerPlayIndex = playIndex
-      }
-    }
+  const playIndex = musicInfo ? list.findIndex(song => song.id === musicInfo.id) : -1
+  let playerPlayIndex = playerList.length ? Math.min(playInfo.playerPlayIndex, playerList.length - 1) : -1
+  if (!isTempPlay && musicInfo) {
+    const queueIndex = playerList.findIndex(song => song.id === musicInfo.id)
+    playerPlayIndex = queueIndex >= 0 ? queueIndex : playerPlayIndex < 1 ? playerList.length - 1 : playerPlayIndex - 1
   }
 
   return {
@@ -127,6 +114,7 @@ export const setPlayMusicInfo = (listId: string | null, musicInfo: LX.Download.L
 
   if (musicInfo == null) {
     playerActions.updatePlayIndex(-1, -1)
+    resetPlaybackQueue()
     setPlayListId(null)
   } else {
     const { playIndex, playerPlayIndex } = getPlayIndex(listId, musicInfo, isTempPlay)
@@ -136,7 +124,7 @@ export const setPlayMusicInfo = (listId: string | null, musicInfo: LX.Download.L
   }
 }
 
-export const getList = (listId: string | null): LX.Music.MusicInfo[] | LX.Download.ListItem[] => {
+export const getList = (listId: string | null): Array<LX.Music.MusicInfo | LX.Download.ListItem> => {
   // return listId == LIST_ID_DOWNLOAD ? downloadList : getListMusicSync(listId)
-  return listId == LIST_IDS.DOWNLOAD ? [] : getListMusicSync(listId)
+  return getPlaybackQueue(listId, listId == LIST_IDS.DOWNLOAD ? [] : getListMusicSync(listId))
 }

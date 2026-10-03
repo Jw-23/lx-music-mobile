@@ -1,5 +1,5 @@
-import { memo, useState, useRef, useMemo, useEffect } from 'react'
-import { View, AppState } from 'react-native'
+import { memo, useState, useRef, useEffect } from 'react'
+import { View, AppState, Pressable } from 'react-native'
 
 import Header from './components/Header'
 // import Aside from './components/Aside'
@@ -11,25 +11,15 @@ import Lyric from './Lyric'
 import { screenkeepAwake, screenUnkeepAwake } from '@/utils/nativeModules/utils'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
-// import { useTheme } from '@/store/theme/hook'
-
-const LyricPage = ({ activeIndex }: { activeIndex: number }) => {
-  const initedRef = useRef(false)
-  const lyric = useMemo(() => <Lyric />, [])
-  switch (activeIndex) {
-    // case 3:
-    case 1:
-      if (!initedRef.current) initedRef.current = true
-      return lyric
-    default:
-      return initedRef.current ? lyric : null
-  }
-  // return activeIndex == 0 || activeIndex == 1 ? setting : null
-}
+import { useDesignColors } from '@/theme/design'
+import { useI18n } from '@/lang'
+import Text from '@/components/common/Text'
 
 // global.iskeep = false
 export default memo(({ componentId }: { componentId: string }) => {
-  // const theme = useTheme()
+  const colors = useDesignColors()
+  const t = useI18n()
+  const pager = useRef<PagerView>(null)
   const [pageIndex, setPageIndex] = useState(0)
   const showLyricRef = useRef(false)
 
@@ -57,7 +47,7 @@ export default memo(({ componentId }: { componentId: string }) => {
 
     const handleComponentIdsChange = (ids: CommonState['componentIds']) => {
       if (ids.comment) screenUnkeepAwake()
-      else if (AppState.currentState == 'active') screenkeepAwake()
+      else if (showLyricRef.current && AppState.currentState == 'active') screenkeepAwake()
     }
 
     global.state_event.on('componentIdsUpdated', handleComponentIdsChange)
@@ -75,6 +65,9 @@ export default memo(({ componentId }: { componentId: string }) => {
       <Header />
       <View style={styles.container}>
         <PagerView
+          ref={pager}
+          offscreenPageLimit={1}
+          overdrag
           onPageSelected={onPageSelected}
           // onPageScrollStateChanged={onPageScrollStateChanged}
           style={styles.pagerView}
@@ -83,13 +76,12 @@ export default memo(({ componentId }: { componentId: string }) => {
             <Pic componentId={componentId} />
           </View>
           <View collapsable={false}>
-            <LyricPage activeIndex={pageIndex} />
+            <Lyric />
           </View>
         </PagerView>
-        {/* <View style={styles.pageIndicator} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pageIndicator}>
-          <View style={{ ...styles.pageIndicatorItem, backgroundColor: pageIndex == 0 ? theme['c-primary-light-100-alpha-700'] : theme['c-primary-alpha-900'] }}></View>
-          <View style={{ ...styles.pageIndicatorItem, backgroundColor: pageIndex == 1 ? theme['c-primary-light-100-alpha-700'] : theme['c-primary-alpha-900'] }}></View>
-        </View> */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+          {(['library_cover', 'library_lyrics'] as const).map((label, index) => <Pressable key={label} accessibilityRole="tab" accessibilityLabel={t(label)} accessibilityState={{ selected: pageIndex === index }} onPress={() => { pager.current?.setPage(index) }} style={{ minHeight: 44, paddingHorizontal: 20, justifyContent: 'center', borderRadius: 12, backgroundColor: pageIndex === index ? colors.secondarySurface : 'transparent' }}><Text size={13} color={pageIndex === index ? colors.accent : colors.secondary}>{t(label)}</Text></Pressable>)}
+        </View>
         <Player />
       </View>
     </>

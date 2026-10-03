@@ -7,9 +7,8 @@ import { useIsPlay, usePlayerMusicInfo, usePlayMusicInfo, useProgress, useStatus
 import { usePageVisible } from '@/store/common/hook'
 import { COMPONENT_IDS, NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { useI18n } from '@/lang'
-import { useQuickAdd } from '@/components/QuickAddProvider'
 import { setNavActiveId } from '@/core/common'
-import { playNext, togglePlay } from '@/core/player/player'
+import { playNext, playPrev, togglePlay } from '@/core/player/player'
 import { navigations } from '@/navigation'
 import commonState from '@/store/common/state'
 import Image from '@/components/common/Image'
@@ -25,7 +24,6 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const current = usePlayMusicInfo()
   const isPlay = useIsPlay()
   const status = useStatusText()
-  const add = useQuickAdd()
   const [autoUpdate, setAutoUpdate] = useState(true)
   const [trackWidth, setTrackWidth] = useState(0)
   const wide = useHorizontalMode()
@@ -43,17 +41,13 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const local = info && ('progress' in info ? info.metadata.musicInfo : info).source === 'local'
   const playbackStatus = Object.values(global.i18n.messages).some(message => message.lyric__load_error === status) ? '' : status
   const subtitle = music.id ? playbackStatus || music.singer || t(local ? 'library_local_music' : 'library_now_playing') : t('library_empty_hint')
-  const addMusic = () => {
-    const info = current.musicInfo
-    if (info) add('progress' in info ? info.metadata.musicInfo : info)
-  }
   return <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.separator }]}>
     <View style={styles.row}>
       <Pressable style={styles.info} onPress={open} onLongPress={() => { if (current.listId) global.app_event.jumpListPosition() }} accessibilityRole="button" accessibilityLabel={music.id ? `${t('library_now_playing')} ${music.name}` : t('library_choose_music')}>
         <Image url={music.pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={styles.art} />
         <View style={styles.text}><Text size={16} numberOfLines={1} style={{ fontWeight: '500' }}>{music.name || t('library_choose_music')}</Text><Text size={12} color={colors.secondary} numberOfLines={1}>{subtitle}</Text></View>
       </Pressable>
-      {music.id ? <Pressable onPress={addMusic} style={styles.button} accessibilityRole="button" accessibilityLabel={t('library_add')}><Text size={26} color={colors.accent}>+</Text></Pressable> : null}
+      <Pressable disabled={!music.id} onPress={async() => { try { await playPrev() } catch { toast(t('library_play_failed')) } }} style={styles.button} accessibilityRole="button" accessibilityLabel={t('library_previous')} accessibilityState={{ disabled: !music.id }}><Icon name="prevMusic" size={24} color={colors.text} /></Pressable>
       <Pressable disabled={!music.id} onPress={togglePlay} style={styles.button} accessibilityRole="button" accessibilityLabel={t(isPlay ? 'player_pause' : 'library_play')} accessibilityState={{ disabled: !music.id }}><Icon name={isPlay ? 'pause' : 'play'} size={23} color={colors.text} /></Pressable>
       <Pressable disabled={!music.id} onPress={async() => { try { await playNext() } catch { toast(t('library_play_failed')) } }} style={styles.button} accessibilityRole="button" accessibilityLabel={t('library_next')} accessibilityState={{ disabled: !music.id }}><Icon name="nextMusic" size={24} color={colors.text} /></Pressable>
     </View>

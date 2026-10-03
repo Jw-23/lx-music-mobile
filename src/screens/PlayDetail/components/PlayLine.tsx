@@ -6,6 +6,7 @@ import { type Lines } from 'lrc-file-parser'
 import { useTheme } from '@/store/theme/hook'
 import { BorderWidths } from '@/theme'
 import { formatPlayTime2 } from '@/utils'
+import { getLyricLineAtOffset } from './lyricLayout'
 import { Icon } from '@/components/common/Icon'
 
 
@@ -68,16 +69,8 @@ export default forwardRef<PlayLineType, PlayLineProps>(({ onPlayLine }, ref) => 
   }
 
   if (!scrollInfo || !visible) return null
-  const offset = scrollInfo.contentOffset.y + scrollInfo.layoutMeasurement.height * 0.4
-  let lineOffset = listLayoutInfo.spaceHeight
-  let targetLineNum = -1
-  for (let line = 0; line < listLayoutInfo.lineHeights.length; line++) {
-    lineOffset += listLayoutInfo.lineHeights[line]
-    if (lineOffset < offset) continue
-    targetLineNum = line
-    break
-  }
-  if (targetLineNum == -1) targetLineNum = listLayoutInfo.lineHeights.length - 1
+  const offset = scrollInfo.contentOffset.y + scrollInfo.layoutMeasurement.height * 0.42
+  const targetLineNum = getLyricLineAtOffset(offset, listLayoutInfo.spaceHeight, listLayoutInfo.lineHeights, lyricLines.length)
   const time = lyricLines[targetLineNum]?.time ?? 0
   const timeLabel = formatPlayTime2(time / 1000)
   return (
@@ -97,7 +90,7 @@ const styles = createStyle({
   playLine: {
     position: 'absolute',
     width: '100%',
-    top: '40%',
+    top: '42%',
     left: 0,
     height: 2,
     // paddingTop: 5,

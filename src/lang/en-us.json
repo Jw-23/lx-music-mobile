@@ -572,5 +572,17 @@
   "version_title_latest": "🎉 The current version is already the latest 🎊",
   "version_title_new": "🌟 New version found 🌟",
   "version_title_unknown": "❓ Failed to get the latest version information ❓",
-  "version_title_update": "🚀 App update 🚀"
+  "version_title_update": "🚀 App update 🚀",
+  "library_queue": "Queue",
+  "library_queue_hint": "Changes apply to this playback session. Play Later songs play first.",
+  "library_queue_empty": "No songs in the queue",
+  "library_queue_priority": "Play Later",
+  "library_queue_order": "Track {count}",
+  "library_queue_up": "Move up",
+  "library_queue_down": "Move down",
+  "library_queue_remove": "Remove from queue",
+  "library_cover": "Artwork",
+  "library_lyrics": "Lyrics",
+  "version_release_source": "Updates: Jw-23/lx-music-mobile · GitHub Releases",
+  "version_check_now": "Check for Updates"
 }

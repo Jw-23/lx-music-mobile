@@ -27,6 +27,7 @@ import BackgroundTimer from 'react-native-background-timer'
 import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounceBackgroundTimer } from '@/utils/tools'
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
+import { resetPlaybackQueue } from './playbackQueue'
 import { addDislikeInfo } from '@/core/dislikeList'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
@@ -272,6 +273,7 @@ const handlePlay = async() => {
  */
 export const playListById = async(listId: string, id: string) => {
   const prevListId = playerState.playInfo.playerListId
+  resetPlaybackQueue()
   setPlayListId(listId)
   const musicInfo = getList(listId).find(m => m.id == id)
   if (!musicInfo) return
@@ -288,10 +290,19 @@ export const playListById = async(listId: string, id: string) => {
  */
 export const playList = async(listId: string, index: number) => {
   const prevListId = playerState.playInfo.playerListId
+  resetPlaybackQueue()
   setPlayListId(listId)
   setPlayMusicInfo(listId, getList(listId)[index])
   if (settingState.setting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
   clearTempPlayeList()
+  await handlePlay()
+}
+
+/** Select within the session queue without discarding its order or pending songs. */
+export const playQueueSong = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, listId: string | null, isTempPlay = false) => {
+  setPlayMusicInfo(listId, musicInfo, isTempPlay)
+  resetRandomNextMusicInfo()
+  clearPlayedList()
   await handlePlay()
 }
 
@@ -365,7 +376,7 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
 
   if (!filteredList.length) return null
   // let currentIndex: number = filteredList.indexOf(currentList[playInfo.playerPlayIndex])
-  if (playerIndex == -1 && filteredList.length) playerIndex = 0
+  if (playerIndex == -1 && filteredList.length && !(playMusicInfo.isTempPlay && playInfo.playerPlayIndex < 0)) playerIndex = 0
   let nextIndex = playerIndex
 
   let togglePlayMethod = settingState.setting['player.togglePlayMethod']
@@ -467,7 +478,7 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
 
   if (!filteredList.length) return handleToggleStop()
   // let currentIndex: number = filteredList.indexOf(currentList[playInfo.playerPlayIndex])
-  if (playerIndex == -1 && filteredList.length) playerIndex = 0
+  if (playerIndex == -1 && filteredList.length && !(playMusicInfo.isTempPlay && playInfo.playerPlayIndex < 0)) playerIndex = 0
   let nextIndex = playerIndex
 
   let togglePlayMethod = settingState.setting['player.togglePlayMethod']

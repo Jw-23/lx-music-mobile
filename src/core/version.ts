@@ -19,8 +19,11 @@ export const hideModal = (componentId: string) => {
   void Navigation.dismissOverlay(componentId)
 }
 
+const updateCheck = { running: false }
 export const checkUpdate = async() => {
-  versionActions.setVersionInfo({ status: 'checking' })
+  if (updateCheck.running) return
+  updateCheck.running = true
+  versionActions.setVersionInfo({ status: 'checking', isLatest: false, isUnknown: false })
   let versionInfo: InitState['versionInfo'] = { ...versionState.versionInfo }
   try {
     const { version, desc, history } = await getVersionInfo()
@@ -42,16 +45,16 @@ export const checkUpdate = async() => {
   //   history: [{ version: '1.8.0', desc: '- 更新xxx22\n- 修复xxx22' }, { version: '1.7.0', desc: '- 更新xxx22\n- 修复xxx22' }],
   // }
   if (versionInfo.newVersion.version == '0.0.0') {
+    versionInfo.isLatest = false
     versionInfo.isUnknown = true
     versionInfo.status = 'error'
   } else {
     versionInfo.status = 'idle'
     versionInfo.isUnknown = false
-    if (compareVer(versionInfo.version, versionInfo.newVersion.version) != -1) {
-      versionInfo.isLatest = true
-    }
+    versionInfo.isLatest = compareVer(versionInfo.version, versionInfo.newVersion.version) != -1
   }
 
+  updateCheck.running = false
   versionActions.setVersionInfo(versionInfo)
 
   if (!versionInfo.isLatest) {

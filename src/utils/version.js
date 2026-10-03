@@ -1,117 +1,67 @@
 import { httpGet } from '@/utils/request'
-import { author, name } from '../../package.json'
+import { RELEASE_API_URL } from '@/config/release'
+import { parseRelease, selectReleaseAsset } from './releaseModel'
 import { downloadFile, stopDownload, temporaryDirectoryPath } from '@/utils/fs'
 import { getSupportedAbis, installApk } from '@/utils/nativeModules/utils'
 import { APP_PROVIDER_NAME } from '@/config/constant'
 
-const abis = [
-  'arm64-v8a',
-  'armeabi-v7a',
-  'x86_64',
-  'x86',
-  'universal',
-]
-
-const address = [
-  [`https://raw.githubusercontent.com/${author.name}/${name}/master/publish/version.json`, 'direct'],
-  ['https://registry.npmjs.org/lx-music-mobile-version-info/latest', 'npm'],
-  [`https://cdn.jsdelivr.net/gh/${author.name}/${name}/publish/version.json`, 'direct'],
-  [`https://fastly.jsdelivr.net/gh/${author.name}/${name}/publish/version.json`, 'direct'],
-  [`https://gcore.jsdelivr.net/gh/${author.name}/${name}/publish/version.json`, 'direct'],
-  ['https://registry.npmmirror.com/lx-music-mobile-version-info/latest', 'npm'],
-  ['https://gitee.com/lyswhut/lx-music-mobile-versions/raw/master/version.json', 'direct'],
-  ['http://cdn.stsky.cn/lx-music/mobile/version.json', 'direct'],
-]
-
-
-const request = async(url, retryNum = 0) => {
+const request = async(url) => {
   return new Promise((resolve, reject) => {
     httpGet(url, {
       timeout: 10000,
+      headers: { Accept: 'application/vnd.github+json' },
     }, (err, resp, body) => {
-      if (err || resp.statusCode != 200) {
-        ++retryNum >= 3
-          ? reject(err || new Error(resp.statusMessage || resp.statusCode))
-          : request(url, retryNum).then(resolve).catch(reject)
+      if (err || resp?.statusCode != 200) {
+        reject(err || new Error(resp?.statusMessage || String(resp?.statusCode)))
       } else resolve(body)
     })
   })
 }
 
-const getDirectInfo = async(url) => {
-  return request(url).then(info => {
-    if (info.version == null) throw new Error('failed')
-    return info
+let checkedRelease = null
+export const getVersionInfo = async() => {
+  const [release, history] = await Promise.all([
+    request(`${RELEASE_API_URL}/latest`),
+    request(`${RELEASE_API_URL}?per_page=10`).catch(() => []),
+  ])
+  const info = parseRelease(release)
+  checkedRelease = release
+  info.history = (Array.isArray(history) ? history : []).filter(item => item?.tag_name !== release.tag_name).flatMap(item => {
+    try { return [parseRelease(item)] } catch { return [] }
   })
+  return info
 }
 
-const getNpmPkgInfo = async(url) => {
-  return request(url).then(json => {
-    if (!json.versionInfo) throw new Error('failed')
-    const info = JSON.parse(json.versionInfo)
-    if (info.version == null) throw new Error('failed')
-    return info
-  })
-}
-
-export const getVersionInfo = async(index = 0) => {
-  const [url, source] = address[index]
-  let promise
-  switch (source) {
-    case 'direct':
-      promise = getDirectInfo(url)
-      break
-    case 'npm':
-      promise = getNpmPkgInfo(url)
-      break
-  }
-
-  return promise.catch(async(err) => {
-    index++
-    if (index >= address.length) throw err
-    return getVersionInfo(index)
-  })
-}
-
-const getTargetAbi = async() => {
-  const supportedAbis = await getSupportedAbis()
-  for (const abi of abis) {
-    if (supportedAbis.includes(abi)) return abi
-  }
-  return abis[abis.length - 1]
-}
 let downloadJobId = null
 const noop = (total, download) => {}
 let apkSavePath
 
 export const downloadNewVersion = async(version, onDownload = noop) => {
-  const abi = await getTargetAbi()
-  const url = `https://github.com/${author.name}/${name}/releases/download/v${version}/${name}-v${version}-${abi}.apk`
+  const release = checkedRelease && parseRelease(checkedRelease).version === version
+    ? checkedRelease
+    : await request(`${RELEASE_API_URL}/tags/v${version}`)
+  if (parseRelease(release).version !== version) throw new Error('Release version mismatch')
+  const url = selectReleaseAsset(release, await getSupportedAbis())
   let savePath = temporaryDirectoryPath + '/lx-music-mobile.apk'
 
   if (downloadJobId) stopDownload(downloadJobId)
+  apkSavePath = null
 
   const { jobId, promise } = downloadFile(url, savePath, {
     progressInterval: 500,
     connectionTimeout: 20000,
     readTimeout: 30000,
-    begin({ statusCode, contentLength }) {
+    begin({ contentLength }) {
       onDownload(contentLength, 0)
-      // switch (statusCode) {
-      //   case 200:
-      //   case 206:
-      //     break
-      //   default:
-      //     onDownload(null, contentLength, 0)
-      //     break
-      // }
     },
     progress({ contentLength, bytesWritten }) {
       onDownload(contentLength, bytesWritten)
     },
   })
   downloadJobId = jobId
-  return promise.then(() => {
+  return promise.then(({ statusCode, bytesWritten }) => {
+    if (statusCode !== 200 || bytesWritten <= 0) throw new Error('APK download failed')
+    downloadJobId = null
     apkSavePath = savePath
     return updateApp()
   })

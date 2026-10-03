@@ -41,3 +41,13 @@ Android 原生构建需要 JDK 17、Android SDK 36 和项目指定的 NDK。调�
 工作流也支持在 Actions 中手动运行并填写已有版本 tag；会检出该 tag，验证版本一致后构建，用于首次触发或重试。
 
 签名使用仓库的 `KEYSTORE_STORE_FILE_BASE64`、`KEYSTORE_STORE_FILE`、`KEYSTORE_KEY_ALIAS`、`KEYSTORE_PASSWORD` 和 `KEYSTORE_KEY_PASSWORD` secrets。首次发布的 fork 使用独立签名；本地备份为受 Git 忽略的 `android/app/lx-music-release.keystore` 和 `android/keystore.properties`，应一并安全备份以供后续版本继续使用。不能覆盖安装上游官方签名的 APK。
+
+## v1.10.2 播放与更新
+
+底栏采用上一首、播放/暂停、下一首。歌单、搜索、排行榜和最近播放中的添加按钮继续保留。播放详情横竖屏都有“播放队列”入口：点选歌曲播放，使用上移/下移和移除按钮调整本次队列。调整不写回歌单；从资料库重新开始播放歌单会重置队列。稍后播放的歌曲优先播放，可单独排序或移除。随机、循环等播放模式仍由播放页模式按钮控制。
+
+歌词页预加载，封面与歌词支持原生分页滑动及明确的切换按钮。歌词即时通过原生列表动画跟随；手动拖动和惯性滚动期间停止自动跟随，惯性结束后 2.5 秒恢复。尊重系统减弱动态效果；远处未测量歌词的定位最多重试两次，切歌及卸载清理任务。
+
+更新渠道统一配置在 `src/config/release.js`，为 `Jw-23/lx-music-mobile`。检查通过 `/releases/latest` 读取正式发布，历史来自同仓库，下载从所选发布的真实 assets 选择设备 ABI 或 universal APK。网络失败不会切换到上游发布源。
+
+验证命令：`npm test`、`npx tsc --noEmit`、`npm run lint`、签名 Android Release 构建。模拟器操作体验由用户自行测试。

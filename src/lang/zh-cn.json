@@ -572,5 +572,17 @@
   "version_title_latest": "🎉 当前版本已是最新 🎊",
   "version_title_new": "🌟 发现新版本 🌟",
   "version_title_unknown": "❓ 获取最新版本信息失败 ❓",
-  "version_title_update": "🚀 软件更新 🚀"
+  "version_title_update": "🚀 软件更新 🚀",
+  "library_queue": "播放队列",
+  "library_queue_hint": "调整播放顺序，仅对本次播放生效。稍后播放的歌曲优先播放。",
+  "library_queue_empty": "队列中还没有歌曲",
+  "library_queue_priority": "稍后播放",
+  "library_queue_order": "第 {count} 首",
+  "library_queue_up": "上移",
+  "library_queue_down": "下移",
+  "library_queue_remove": "移出队列",
+  "library_cover": "封面",
+  "library_lyrics": "歌词",
+  "version_release_source": "更新来源：Jw-23/lx-music-mobile · GitHub Releases",
+  "version_check_now": "检查更新"
 }

@@ -1,3 +1,4 @@
+import { RELEASE_URL } from '@/config/release'
 import { memo } from 'react'
 import { View, TouchableOpacity } from 'react-native'
 
@@ -26,7 +27,7 @@ export default memo(() => {
     void openUrl('https://github.com/lyswhut/lx-music-mobile/issues?q=is%3Aissue+')
   }
   const openGHReleasePage = () => {
-    void openUrl('https://github.com/lyswhut/lx-music-mobile/releases')
+    void openUrl(RELEASE_URL)
   }
   const openFAQPage = () => {
     void openUrl('https://lyswhut.github.io/lx-music-doc/mobile/faq')
