@@ -5,7 +5,7 @@ import Image from '@/components/common/Image'
 import Text from '@/components/common/Text'
 import { useActiveListId, useMyList } from '@/store/list/hook'
 import { getListMusics, setActiveList } from '@/core/list'
-import { useDesignColors } from '@/theme/design'
+import { useCollectionColors } from '../colors'
 import { useI18n } from '@/lang'
 import { type Position } from './ListMenu'
 
@@ -15,7 +15,7 @@ export default ({ onShowMenu, onCreate }: {
 }) => {
   const lists = useMyList()
   const activeId = useActiveListId()
-  const colors = useDesignColors()
+  const colors = useCollectionColors()
   const t = useI18n()
   const [query, setQuery] = useState('')
   const [musics, setMusics] = useState<Record<string, LX.Music.MusicInfo[]>>({})
@@ -43,7 +43,7 @@ export default ({ onShowMenu, onCreate }: {
       return <View style={[styles.row, { backgroundColor: colors.surface }]}>
         <Pressable style={styles.main} accessibilityRole="button" accessibilityLabel={`${item.name}, ${t('library_song_count', { count: songs.length })}`} onPress={() => { setActiveList(item.id); global.app_event.changeLoveListVisible(false) }}>
           <View style={[styles.art, { backgroundColor: colors.secondarySurface }]}>{pic ? <Image url={pic} style={{ width: 52, height: 52 }} /> : <Icon name="album" size={23} color={colors.accent} />}</View>
-          <View style={styles.text}><Text size={17} numberOfLines={2} style={{ fontWeight: '600' }}>{item.name}</Text><Text size={13} color={colors.secondary}>{t('library_song_count', { count: songs.length })}</Text></View>
+          <View style={styles.text}><Text color={colors.text} size={17} numberOfLines={2} style={{ fontWeight: '600' }}>{item.name}</Text><Text size={13} color={colors.secondary}>{t('library_song_count', { count: songs.length })}</Text></View>
           {activeId === item.id ? <Text size={20} color={colors.accent}>✓</Text> : null}
         </Pressable>
         <Pressable style={styles.more} onPress={() => { onShowMenu({ listInfo: item, index: lists.findIndex(list => list.id === item.id) }, { x: 0, y: 0, w: 44, h: 44 }) }} accessibilityRole="button" accessibilityLabel={`${t('library_more')} ${item.name}`}><Icon name="dots-vertical" size={20} color={colors.accent} style={{ transform: [{ rotate: '90deg' }] }} /></Pressable>
