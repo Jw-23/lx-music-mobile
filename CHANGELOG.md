@@ -6,6 +6,16 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.7](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.6...v1.10.7) - 2026-10-04
+
+### 修复与优化
+
+- 播放队列、下一曲与预加载共用顺序计算，修复队列显示顺序与实际播放顺序不一致的问题。
+- 随机顺序在本次播放中保持稳定，队列体现稍后播放优先级和当前歌曲的位置。
+- 上下移动按钮改为拖动手柄，支持浮动歌曲、位置预览、边缘自动滚动与读屏排序。
+- 拖动保留当前歌曲和恢复位置，切歌、关闭面板、歌曲变化及手势中断取消旧拖动。
+- 77 项单元测试、类型检查和 lint 通过。
+
 ## [1.10.0](https://github.com/Jw-23/lx-music-mobile/compare/v1.9.1...v1.10.0) - 2026-10-03
 
 ### 新增

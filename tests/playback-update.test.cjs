@@ -7,7 +7,7 @@ const ts = require('typescript')
 
 function load(file, imports = {}, globals = {}) {
   const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8')
-  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021 } })
+  const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021, jsx: ts.JsxEmit.ReactJSX } })
   const exports = {}
   vm.runInNewContext(outputText, { exports, console, setTimeout, clearTimeout, ...globals, require(name) {
     if (!(name in imports)) throw new Error(`Unexpected import: ${name}`)
@@ -107,20 +107,26 @@ function playback(options = {}) {
   }, { global: { app_event: { musicToggled() {} } } })
   const clearPlayedList = () => { state.playedList = [] }
   const settings = { setting: { 'player.togglePlayMethod': 'listLoop' } }
+  const dislikeInfo = { names: new Set(), musicNames: new Set(), singerNames: new Set(), rules: '' }
+  const utils = load('src/core/player/utils.ts', {
+    './playedList': { clearPlayedList }, '@/config/constant': { SPLIT_CHAR: { DISLIKE_NAME: '\u0000', DISLIKE_NAME_ALIAS: '' } },
+    '@/store/dislikeList': { state: { dislikeInfo } },
+  })
+  const order = load('src/core/player/queueOrder.ts', { './utils': utils })
   const statuses = []
   let stops = 0
   const guard = load('src/core/player/urlRefreshGuard.ts')
   const player = load('src/core/player/player.ts', {
     '@/plugins/player': { isInitialized: () => true, setStop: async() => { stops++ }, ...options.native }, '@/core/player/playStatus': { setStatusText: text => statuses.push(text) },
     '@/store/player/state': { default: state }, '@/store/setting/state': { default: settings }, '@/core/player/playInfo': playInfo,
-    '@/core/player/playedList': { clearPlayedList, removePlayedList: index => state.playedList.splice(index, 1) },
+    '@/core/player/playedList': { clearPlayedList, addPlayedList: info => { if (!state.playedList.some(item => item.musicInfo.id === info.musicInfo.id)) state.playedList.push(info) }, removePlayedList: index => state.playedList.splice(index, 1) },
     '@/core/player/tempPlayList': { clearTempPlayeList: () => { state.tempPlayList = [] }, removeTempPlayList: index => state.tempPlayList.splice(index, 1) },
     '@/core/music': options.music || {}, '@/utils/message': { requestMsg: { tooManyRequests: 'rate limited', cancelRequest: 'cancelled' } }, '@/utils/common': { getRandom: () => 2 },
-    './utils': { filterList: async({ list, playerMusicInfo }) => ({ filteredList: list, playerIndex: list.findIndex(s => s.id === playerMusicInfo?.id) }) },
+    './utils': utils, './queueOrder': order, '@/store/dislikeList': { state: { dislikeInfo } },
     'react-native-background-timer': { default: options.timer || { clearTimeout() {} } }, '@/utils/tools': { debounceBackgroundTimer: () => () => {} },
     '@/config/constant': { LIST_IDS: {} }, '@/core/list': {}, './playbackQueue': queue, './urlRefreshGuard': guard, '@/core/dislikeList': {},
   }, { ...options.globals, global: { lx: {}, i18n: { t: key => key }, app_event: { pause() {}, error() { state.isPlay = false } } } })
-  return { queue, songs, state, playInfo, player, settings, statuses, stops: () => stops, guard }
+  return { queue, songs, state, playInfo, player, settings, statuses, dislikeInfo, stops: () => stops, guard }
 }
 test('reordering and removal change actual next and previous playback without changing the saved playlist', async() => {
   const p = playback()
@@ -657,4 +663,168 @@ test('a hung URL request cannot start playback after its loading timeout stops a
   resolveUrl('too-late-url'); await pending
   assert.equal(resources.length, 0)
   assert.equal(timer.count(), 0)
+})
+
+
+test('displayed upcoming order starts after the playing song and matches natural playback for a full loop', async() => {
+  const p = playback()
+  assert.deepEqual(ids(p.player.getUpcomingPlayback().songs.map(info => info.musicInfo)), ['c', 'd', 'a', 'b'])
+  for (let step = 0; step < 8; step++) {
+    const expected = p.player.getUpcomingPlayback().songs[0].musicInfo.id
+    assert.equal((await p.player.getNextPlayMusicInfo()).musicInfo.id, expected)
+    await p.player.playNext(true)
+    assert.equal(p.state.playMusicInfo.musicInfo.id, expected)
+  }
+})
+test('the displayed priority queue precedes the rotated session list and resumes after its anchor', async() => {
+  const p = playback()
+  p.state.tempPlayList = ['later1', 'later2'].map(id => ({ musicInfo: song(id), listId: 'other', isTempPlay: true }))
+  assert.deepEqual(ids(p.player.getUpcomingPlayback().songs.map(info => info.musicInfo)), ['later1', 'later2', 'c', 'd', 'a', 'b'])
+  for (const expected of ['later1', 'later2', 'c', 'd']) {
+    assert.equal(p.player.getUpcomingPlayback().songs[0].musicInfo.id, expected)
+    await p.player.playNext(true)
+    assert.equal(p.state.playMusicInfo.musicInfo.id, expected)
+  }
+})
+test('opening or preloading a shuffled queue keeps its order; natural playback consumes the displayed first item', async() => {
+  const p = playback()
+  p.settings.setting['player.togglePlayMethod'] = 'random'
+  p.state.playedList = [p.state.playMusicInfo]
+  const initial = ids(p.player.getUpcomingPlayback().songs.map(info => info.musicInfo))
+  assert.deepEqual(ids(p.player.getUpcomingPlayback().songs.map(info => info.musicInfo)), initial)
+  assert.ok(!initial.includes('b'))
+  for (const expected of initial) {
+    assert.equal((await p.player.getNextPlayMusicInfo()).musicInfo.id, expected)
+    assert.equal(p.player.getUpcomingPlayback().songs[0].musicInfo.id, expected)
+    await p.player.playNext(true)
+    assert.equal(p.state.playMusicInfo.musicInfo.id, expected)
+  }
+})
+test('queue display respects sequential stop, single repeat and disabled auto switching', async() => {
+  const p = playback()
+  p.settings.setting['player.togglePlayMethod'] = 'list'
+  assert.deepEqual(ids(p.player.getUpcomingPlayback().songs.map(info => info.musicInfo)), ['c', 'd'])
+  await p.player.playNext(true)
+  await p.player.playNext(true)
+  assert.equal(await p.player.getNextPlayMusicInfo(), null)
+  await p.player.playNext(true)
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'd')
+  p.settings.setting['player.togglePlayMethod'] = 'singleLoop'
+  assert.equal(p.player.getUpcomingPlayback().songs[0].musicInfo.id, 'd')
+  await p.player.playNext(true)
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'd')
+  p.settings.setting['player.togglePlayMethod'] = 'none'
+  assert.equal(p.player.getUpcomingPlayback().songs.length, 0)
+  await p.player.playNext(true)
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'd')
+  await p.player.playNext()
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'a')
+})
+test('the visible queue filters disliked songs and handles a deleted history entry after going back', async() => {
+  const p = playback()
+  p.dislikeInfo.musicNames.add('c')
+  assert.deepEqual(ids(p.player.getUpcomingPlayback().songs.map(info => info.musicInfo)), ['d', 'a', 'b'])
+  await p.player.playNext(true)
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'd')
+  p.state.playedList = [p.songs[0], p.songs[3], song('deleted')].map(musicInfo => ({ musicInfo, listId: 'saved', isTempPlay: false }))
+  await p.player.playPrev()
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'a')
+  assert.equal(p.player.getUpcomingPlayback().songs[0].musicInfo.id, 'd')
+  await p.player.playNext(true)
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'd')
+})
+test('an explicit drag order overrides shuffle and is consumed in exactly that order', async() => {
+  const p = playback()
+  p.settings.setting['player.togglePlayMethod'] = 'random'
+  p.state.playedList = []
+  p.queue.setQueueOrder('saved', [p.songs[1], p.songs[3], p.songs[0], p.songs[2]])
+  p.playInfo.updatePlayIndex()
+  for (const expected of ['d', 'a', 'c', 'b']) {
+    assert.equal(p.player.getUpcomingPlayback().songs[0].musicInfo.id, expected)
+    await p.player.playNext(true)
+    assert.equal(p.state.playMusicInfo.musicInfo.id, expected)
+  }
+  assert.deepEqual(ids(p.songs), ['a', 'b', 'c', 'd'])
+})
+
+
+test('dragging visible cyclic positions translates to the right source indices and leaves the saved playlist intact', async() => {
+  const p = playback()
+  // The visible order is c,d,a; dragging a to the front must play a, not c.
+  p.queue.reorderUpcomingSongs('saved', p.playInfo.getList('saved'), 1, [p.songs[0], p.songs[2], p.songs[3]])
+  p.playInfo.updatePlayIndex()
+  assert.equal(p.player.getUpcomingPlayback().songs[0].musicInfo.id, 'a')
+  for (const expected of ['a', 'c', 'd']) {
+    await p.player.playNext(true)
+    assert.equal(p.state.playMusicInfo.musicInfo.id, expected)
+  }
+  assert.deepEqual(ids(p.songs), ['a', 'b', 'c', 'd'])
+})
+test('sequential drag keeps previously played songs before the anchor; a priority song does not move the resume point', async() => {
+  const p = playback()
+  p.settings.setting['player.togglePlayMethod'] = 'list'
+  p.queue.reorderUpcomingSongs('saved', p.songs, 1, [p.songs[3], p.songs[2]])
+  p.playInfo.updatePlayIndex()
+  assert.deepEqual(ids(p.playInfo.getList('saved')), ['a', 'b', 'd', 'c'])
+  p.state.tempPlayList = [{ musicInfo: song('later'), listId: 'other', isTempPlay: true }]
+  await p.player.playNext(true)
+  assert.equal(p.state.playInfo.playerPlayIndex, 1)
+  assert.equal(p.player.getUpcomingPlayback().songs[0].musicInfo.id, 'd')
+  await p.player.playNext(true)
+  await p.player.playNext(true)
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'c')
+  assert.equal(p.player.getUpcomingPlayback().songs.length, 0)
+})
+test('a stale reorder cannot insert a deleted song, repeat the playing anchor or duplicate an upcoming song', () => {
+  const p = playback()
+  let changes = 0
+  p.queue.subscribePlaybackQueue(() => changes++)
+  for (const invalid of [[song('deleted')], [p.songs[1]], [p.songs[2], p.songs[2]]]) {
+    p.queue.reorderUpcomingSongs('saved', p.songs, 1, invalid)
+  }
+  assert.equal(changes, 0)
+  assert.deepEqual(ids(p.playInfo.getList('saved')), ids(p.songs))
+})
+
+function queueScreen(p) {
+  const jsx = (type, props) => ({ type, props })
+  const view = load('src/components/player/QueueButton.tsx', {
+    react: { useRef: value => ({ current: value }), useState: value => [value, () => {}], useEffect() {} },
+    'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
+    'react-native': { Pressable: 'Pressable', View: 'View', StyleSheet: { create: value => value, hairlineWidth: 1 }, useWindowDimensions: () => ({ fontScale: 1 }) },
+    '@/components/common/DragSortList': { default: 'DragSortList' }, '@/components/common/dragSort': load('src/components/common/dragSort.ts'),
+    '@/components/common/Icon': { Icon: 'Icon' }, '@/components/common/Dialog': { default: 'Dialog' }, '@/components/common/Text': { default: 'Text' },
+    '@/theme/design': { useDesignColors: () => ({}) }, '@/lang': { useI18n: () => key => key },
+    '@/core/player/playInfo': p.playInfo, '@/core/player/playedList': { clearPlayedList: () => { p.state.playedList = [] } },
+    '@/core/player/player': p.player, '@/core/player/playbackQueue': p.queue,
+    '@/store/player/state': { default: p.state }, '@/store/player/action': { default: {
+      updatePlayIndex: (playIndex, playerPlayIndex) => Object.assign(p.state.playInfo, { playIndex, playerPlayIndex }),
+      moveTempPlayList: (from, to) => p.state.tempPlayList.splice(to, 0, p.state.tempPlayList.splice(from, 1)[0]),
+    } },
+    '@/store/player/hook': { usePlayInfo: () => p.state.playInfo, usePlayMusicInfo: () => p.state.playMusicInfo },
+    '@/store/setting/hook': { useSettingValue: () => p.settings.setting['player.togglePlayMethod'] }, '@/utils/tools': {},
+  }).default()
+  return view.props.children[1].props.children.find(child => child?.type === 'DragSortList').props
+}
+test('the actual queue screen shows rotated upcoming rows and dragging their positions changes the real next song', async() => {
+  const p = playback()
+  const view = queueScreen(p)
+  assert.deepEqual(ids(view.data.map(row => row.info.musicInfo)), ['c', 'd', 'a'])
+  view.onMove(2, 0)
+  assert.deepEqual(ids(queueScreen(p).data.map(row => row.info.musicInfo)), ['a', 'c', 'd'])
+  await p.player.playNext(true)
+  assert.equal(p.state.playMusicInfo.musicInfo.id, 'a')
+})
+test('dragging the normal rows while a priority song plays preserves its anchor and all pending songs', async() => {
+  const p = playback()
+  p.state.playMusicInfo = { musicInfo: song('priority-current'), listId: 'other', isTempPlay: true }
+  p.state.tempPlayList = ['priority1', 'priority2'].map(id => ({ musicInfo: song(id), listId: 'other', isTempPlay: true }))
+  const view = queueScreen(p)
+  assert.deepEqual(ids(view.data.map(row => row.info.musicInfo)), ['priority1', 'priority2', 'c', 'd', 'a'])
+  view.onMove(4, 2)
+  assert.deepEqual(ids(queueScreen(p).data.map(row => row.info.musicInfo)), ['priority1', 'priority2', 'a', 'c', 'd'])
+  for (const expected of ['priority1', 'priority2', 'a']) {
+    await p.player.playNext(true)
+    assert.equal(p.state.playMusicInfo.musicInfo.id, expected)
+  }
 })
