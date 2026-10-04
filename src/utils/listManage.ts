@@ -13,6 +13,9 @@ import { LIST_IDS } from '@/config/constant'
 
 export const userLists: LX.List.UserListInfo[] = []
 export const allMusicList = new Map<string, LX.Music.MusicInfo[]>()
+const musicListRevisions = new Map<string, number>()
+const pendingMusicLists = new Map<string, { revision: number, promise: Promise<LX.Music.MusicInfo[]> }>()
+const getMusicListRevision = (id: string) => musicListRevisions.get(id) ?? 0
 
 export const setUserLists = (lists: LX.List.UserListInfo[]) => {
   userLists.splice(0, userLists.length, ...lists)
@@ -20,10 +23,12 @@ export const setUserLists = (lists: LX.List.UserListInfo[]) => {
 }
 
 export const setMusicList = (listId: string, musicList: LX.Music.MusicInfo[]): LX.Music.MusicInfo[] => {
+  musicListRevisions.set(listId, getMusicListRevision(listId) + 1)
   allMusicList.set(listId, musicList)
   return musicList
 }
 export const removeMusicList = (id: string) => {
+  musicListRevisions.set(id, getMusicListRevision(id) + 1)
   allMusicList.delete(id)
 }
 
@@ -114,9 +119,10 @@ export const listDataOverwrite = ({ defaultList, loveList, userList, tempList }:
     return listInfo
   })
   for (const list of userLists) {
-    if (!allMusicList.has(list.id) || newUserIds.includes(list.id)) continue
+    if (newUserIds.includes(list.id)) continue
+    const loaded = allMusicList.has(list.id)
     removeMusicList(list.id)
-    updatedListIds.push(list.id)
+    if (loaded) updatedListIds.push(list.id)
   }
   overwriteUserList(newUserListInfos)
 
@@ -159,8 +165,9 @@ export const userListsRemove = (ids: string[]) => {
   const changedIds = []
   for (const id of ids) {
     removeUserList(id)
-    if (!allMusicList.has(id)) continue
+    const loaded = allMusicList.has(id)
     removeMusicList(id)
+    if (!loaded) continue
     void removeListPosition(id)
     void removeListUpdateInfo(id)
     changedIds.push(id)
@@ -208,8 +215,20 @@ export const getListMusicSync = (id: string | null) => {
 export const getListMusics = async(listId: string): Promise<LX.Music.MusicInfo[]> => {
   if (!listId) return []
   if (allMusicList.has(listId)) return allMusicList.get(listId)!
-  const list = await getListMusicsFromStore(listId)
-  return setMusicList(listId, list)
+  const revision = getMusicListRevision(listId)
+  const existing = pendingMusicLists.get(listId)
+  if (existing?.revision === revision) return existing.promise
+
+  // The library and the collector can load a newly created list simultaneously.
+  // Share the read, and never replace newer songs with its stale storage snapshot.
+  const request = getListMusicsFromStore(listId).then(list => {
+    if (getMusicListRevision(listId) !== revision) return allMusicList.get(listId) ?? []
+    return setMusicList(listId, list)
+  }).finally(() => {
+    if (pendingMusicLists.get(listId)?.promise === request) pendingMusicLists.delete(listId)
+  })
+  pendingMusicLists.set(listId, { revision, promise: request })
+  return request
 }
 
 export const listMusicOverwrite = async(listId: string, musicInfos: LX.Music.MusicInfo[]): Promise<string[]> => {

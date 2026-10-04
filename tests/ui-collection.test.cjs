@@ -241,3 +241,67 @@ test('the collect button works when the source omits a playlist name and ignores
   finish(); await Promise.all([first, second])
   assert.deepEqual(busy, [true, false])
 })
+
+function musicCache() {
+  const reads = []
+  const cache = load('src/utils/listManage.ts', {
+    '@/utils/data': { getListMusics: id => new Promise((resolve, reject) => reads.push({ id, resolve, reject })) },
+    '@/utils/common': { arrPush: (target, values) => target.push(...values), arrUnshift: (target, values) => target.unshift(...values) },
+    '@/config/constant': { LIST_IDS: { DEFAULT: 'default', LOVE: 'love' } },
+  })
+  return { ...cache, reads }
+}
+test('a late empty storage read cannot overwrite songs already written by collection or update', async() => {
+  const cache = musicCache()
+  const loading = cache.getListMusics('saved')
+  cache.setMusicList('saved', [song('collected')])
+  cache.reads[0].resolve([])
+  assert.deepEqual(Array.from(await loading, music => music.id), ['collected'])
+  assert.deepEqual(Array.from(cache.getListMusicSync('saved'), music => music.id), ['collected'])
+})
+test('the library and collection share one storage read, and adding songs keeps the same populated cache', async() => {
+  const cache = musicCache()
+  const displayed = cache.getListMusics('saved')
+  const collecting = cache.listMusicAdd('saved', [song('collected')], 'bottom')
+  assert.equal(cache.reads.length, 1)
+  cache.reads[0].resolve([])
+  await collecting
+  const list = await displayed
+  assert.deepEqual(Array.from(list, music => music.id), ['collected'])
+  assert.equal(await cache.getListMusics('saved'), list)
+  assert.equal(cache.reads.length, 1)
+})
+test('deleting a playlist while it loads prevents the old read from restoring deleted songs', async() => {
+  const cache = musicCache()
+  cache.setUserLists([{ id: 'removed', name: 'Removed' }])
+  const loading = cache.getListMusics('removed')
+  cache.userListsRemove(['removed'])
+  cache.reads[0].resolve([song('deleted')])
+  assert.equal((await loading).length, 0)
+  assert.equal(cache.allMusicList.has('removed'), false)
+})
+test('a failed shared storage read is cleared so the next attempt can recover', async() => {
+  const cache = musicCache()
+  const first = cache.getListMusics('saved')
+  const second = cache.getListMusics('saved')
+  cache.reads[0].reject(new Error('read failed'))
+  await Promise.all([assert.rejects(first, /read failed/), assert.rejects(second, /read failed/)])
+  const retry = cache.getListMusics('saved')
+  assert.equal(cache.reads.length, 2)
+  cache.reads[1].resolve([song('recovered')])
+  assert.deepEqual(Array.from(await retry, music => music.id), ['recovered'])
+})
+test('completion of an older cancelled load cannot remove the pending read for a recreated playlist', async() => {
+  const cache = musicCache()
+  const old = cache.getListMusics('saved')
+  cache.removeMusicList('saved')
+  const current = cache.getListMusics('saved')
+  assert.equal(cache.reads.length, 2)
+  cache.reads[0].resolve([song('stale')])
+  assert.equal((await old).length, 0)
+  const shared = cache.getListMusics('saved')
+  assert.equal(cache.reads.length, 2)
+  cache.reads[1].resolve([song('current')])
+  assert.deepEqual(Array.from(await current, music => music.id), ['current'])
+  assert.equal(await shared, await current)
+})
