@@ -6,6 +6,16 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.8](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.7...v1.10.8) - 2026-10-04
+
+### 修复
+
+- 原源取链失败后刷新同源搜索歌曲信息，修复歌单信息过期或不完整时未尝试同源有效版本的问题。
+- 同源匹配优先核对歌曲 ID，其他匹配要求曲名、歌手和专辑或时长证据。
+- 跳过酷狗空音质哈希，兼容旧歌单缺少音质字段的情况，拒绝空 URL。
+- 恢复共用并发搜索并限制次数与超时，请求取消和限流停止额外恢复。
+- 93 项单元测试、类型检查和 lint 通过。
+
 ## [1.10.7](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.6...v1.10.7) - 2026-10-04
 
 ### 修复与优化
