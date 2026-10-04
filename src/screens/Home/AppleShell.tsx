@@ -11,14 +11,7 @@ import StatusBar from '@/components/common/StatusBar'
 import PlayerBar from '@/components/player/PlayerBar'
 import Main from './Vertical/Main'
 import SearchTypeSelector from './Views/Search/SearchTypeSelector'
-
-const tabs = [
-  { id: 'nav_love', icon: 'album', title: 'library_title' },
-  { id: 'nav_songlist', icon: 'home', title: 'library_discover' },
-  { id: 'nav_top', icon: 'leaderboard', title: 'library_charts' },
-  { id: 'nav_search', icon: 'search-2', title: 'library_search' },
-  { id: 'nav_setting', icon: 'setting', title: 'library_settings' },
-] as const
+import { HOME_TABS as tabs } from '@/config/homeTabs'
 
 export default () => {
   const active = useNavActiveId()

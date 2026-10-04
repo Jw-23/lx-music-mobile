@@ -11,6 +11,7 @@ import PagerView, { type PageScrollStateChangedNativeEvent, type PagerViewOnPage
 import { setNavActiveId } from '@/core/common'
 import settingState from '@/store/setting/state'
 import PageTransition from '@/components/common/PageTransition'
+import { HOME_TAB_INDEX as viewMap, HOME_TAB_IDS as indexMap } from '@/config/homeTabs'
 
 const hideKeys = [
   'list.isShowAlbumName',
@@ -169,20 +170,13 @@ const SettingPage = () => {
   return visible ? component : null
 }
 
-const viewMap = {
-  nav_search: 0,
-  nav_songlist: 1,
-  nav_top: 2,
-  nav_love: 3,
-  nav_setting: 4,
+const pages = {
+  nav_love: MylistPage,
+  nav_songlist: SongListPage,
+  nav_top: LeaderboardPage,
+  nav_search: SearchPage,
+  nav_setting: SettingPage,
 }
-const indexMap = [
-  'nav_search',
-  'nav_songlist',
-  'nav_top',
-  'nav_love',
-  'nav_setting',
-] as const
 
 const Main = () => {
   const [transition, setTransition] = useState({ key: String(commonState.navActiveId), direction: 1, enabled: true })
@@ -190,24 +184,6 @@ const Main = () => {
   const activeIndexRef = useRef(viewMap[commonState.navActiveId])
   const pendingIndex = useRef<number | null>(null)
   const tapRevision = useRef(0)
-  // const isScrollingRef = useRef(false)
-  // const scrollPositionRef = useRef(-1)
-
-  // const handlePageScroll = useCallback(({ nativeEvent }) => {
-  //   console.log(nativeEvent.offset, activeIndexRef.current)
-  //   // if (activeIndexRef.current == -1) return
-  //   // if (nativeEvent.offset == 0) {
-  //   //   isScrollingRef.current = false
-
-  //   //   const index = nativeEvent.position
-  //   //   if (activeIndexRef.current == index) return
-  //   //   activeIndexRef.current = index
-  //   //   setNavActiveIndex(index)
-  //   // } else if (!isScrollingRef.current) {
-  //   //   isScrollingRef.current = true
-  //   // }
-  // }, [setNavActiveIndex])
-
   const onPageSelected = useCallback(({ nativeEvent }: PagerViewOnPageSelectedEvent) => {
     // Ignore a late callback from an earlier tab tap.
     if (pendingIndex.current !== null && pendingIndex.current !== nativeEvent.position) return
@@ -219,26 +195,12 @@ const Main = () => {
   }, [])
 
   const onPageScrollStateChanged = useCallback(({ nativeEvent }: PageScrollStateChangedNativeEvent) => {
-    // console.log(nativeEvent)
-    if (nativeEvent.pageScrollState === 'dragging') pendingIndex.current = null
-    if (nativeEvent.pageScrollState !== 'idle') setTransition(current => ({ ...current, enabled: false }))
+    if (nativeEvent.pageScrollState === 'dragging') {
+      pendingIndex.current = null
+      setTransition(current => ({ ...current, enabled: false }))
+    }
     const idle = nativeEvent.pageScrollState == 'idle'
     if (global.lx.homePagerIdle != idle) global.lx.homePagerIdle = idle
-    // if (nativeEvent.pageScrollState != 'idle') return
-    // if (scrollPositionRef.current != commonState.navActiveIndex) {
-    //   setNavActiveIndex(scrollPositionRef.current)
-    // }
-    // if (activeIndexRef.current == -1) return
-    // if (nativeEvent.offset == 0) {
-    //   isScrollingRef.current = false
-
-    //   const index = nativeEvent.position
-    //   if (activeIndexRef.current == index) return
-    //   activeIndexRef.current = index
-    //   setNavActiveIndex(index)
-    // } else if (!isScrollingRef.current) {
-    //   isScrollingRef.current = true
-    // }
   }, [])
 
   useEffect(() => {
@@ -255,7 +217,6 @@ const Main = () => {
       if (!keys.includes('common.homePageScroll')) return
       pagerViewRef.current?.setScrollEnabled(setting['common.homePageScroll']!)
     }
-    // window.requestAnimationFrame(() => pagerViewRef.current && pagerViewRef.current.setPage(activeIndexRef.current))
     global.state_event.on('navActiveIdUpdated', handleUpdate)
     global.state_event.on('configUpdated', handleConfigUpdate)
     return () => {
@@ -268,43 +229,17 @@ const Main = () => {
   const component = useMemo(() => (
     <PagerView ref={pagerViewRef}
       initialPage={activeIndexRef.current}
-      // onPageScroll={handlePageScroll}
+      layoutDirection="ltr"
       offscreenPageLimit={1}
       onPageSelected={onPageSelected}
       onPageScrollStateChanged={onPageScrollStateChanged}
       scrollEnabled={settingState.setting['common.homePageScroll']}
       style={styles.pagerView}
     >
-      <View collapsable={false} key="nav_search" style={styles.pageStyle}>
-        <SearchPage />
-      </View>
-      <View collapsable={false} key="nav_songlist" style={styles.pageStyle}>
-        <SongListPage />
-      </View>
-      <View collapsable={false} key="nav_top" style={styles.pageStyle}>
-        <LeaderboardPage />
-      </View>
-      <View collapsable={false} key="nav_love" style={styles.pageStyle}>
-        <MylistPage />
-      </View>
-      <View collapsable={false} key="nav_setting" style={styles.pageStyle}>
-        <SettingPage />
-      </View>
-      {/* <View collapsable={false} key="nav_search" style={styles.pageStyle}>
-        <Search />
-      </View>
-      <View collapsable={false} key="nav_songlist" style={styles.pageStyle}>
-        <SongList />
-      </View>
-      <View collapsable={false} key="nav_top" style={styles.pageStyle}>
-        <Leaderboard />
-      </View>
-      <View collapsable={false} key="nav_love" style={styles.pageStyle}>
-        <Mylist />
-      </View>
-      <View collapsable={false} key="nav_setting" style={styles.pageStyle}>
-        <Setting />
-      </View> */}
+      {indexMap.map(id => {
+        const Page = pages[id]
+        return <View collapsable={false} key={id} style={styles.pageStyle}><Page /></View>
+      })}
     </PagerView>
   ), [onPageScrollStateChanged, onPageSelected])
 
@@ -324,4 +259,3 @@ const styles = createStyle({
 
 
 export default Main
-
