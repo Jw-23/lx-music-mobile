@@ -10,6 +10,8 @@ import { createStyle } from '@/utils/tools'
 import PagerView, { type PageScrollStateChangedNativeEvent, type PagerViewOnPageSelectedEvent } from 'react-native-pager-view'
 import { setNavActiveId } from '@/core/common'
 import settingState from '@/store/setting/state'
+import { useNavActiveId } from '@/store/common/hook'
+import PageTransition from '@/components/common/PageTransition'
 
 const hideKeys = [
   'list.isShowAlbumName',
@@ -194,6 +196,7 @@ const indexMap = [
 ] as const
 
 const Main = () => {
+  const activeId = useNavActiveId()
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null)
   let activeIndexRef = useRef(viewMap[commonState.navActiveId])
   // const isScrollingRef = useRef(false)
@@ -307,7 +310,7 @@ const Main = () => {
     </PagerView>
   ), [onPageScrollStateChanged, onPageSelected])
 
-  return component
+  return <PageTransition transitionKey={activeId}>{component}</PageTransition>
 }
 
 const styles = createStyle({

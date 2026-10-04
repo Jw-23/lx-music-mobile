@@ -77,7 +77,7 @@ const Component = <M extends Menus>({ menus, onPress, onHide, activeId, title, p
       </Pressable>
     })}
   </ScrollView>
-  return <Modal ref={modal} onHide={onHide} bgColor="rgba(0,0,0,0.3)">
+  return <Modal ref={modal} transition={selection ? 'popover' : 'sheet'} onHide={onHide} bgColor="rgba(0,0,0,0.3)">
     {selection ? <View onStartShouldSetResponder={() => true} style={[styles.popover, { width, maxHeight: availableHeight, top, left: Math.max(16, Math.min(position.x, window.width - width - 16)), backgroundColor: colors.surface }]}>{rows}</View> : <SafeAreaView style={styles.overlay} pointerEvents="box-none">
       <View onStartShouldSetResponder={() => true} style={[styles.actions, { maxHeight: Math.max(100, Math.min(window.height * 0.78, window.height - 140)), backgroundColor: colors.surface }]}>{rows}</View>
       <Pressable onPress={hide} accessibilityRole="button" style={({ pressed }) => [styles.cancel, { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}><Text size={17} color={colors.accent} style={{ fontWeight: '600' }}>{t('cancel')}</Text></Pressable>

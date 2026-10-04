@@ -23,7 +23,7 @@ export default forwardRef<DialogType, DialogProps>(({ onHide, keyHide = true, bg
   const t = useI18n()
   const alert = presentation === 'alert'
   useImperativeHandle(ref, () => ({ setVisible(visible) { modal.current?.setVisible(visible) } }))
-  return <Modal ref={modal} onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(0,0,0,0.35)">
+  return <Modal ref={modal} transition={alert ? 'alert' : 'sheet'} onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor="rgba(0,0,0,0.35)">
     <KeyboardAvoidingView style={[styles.overlay, { justifyContent: alert ? 'center' : 'flex-end' }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} pointerEvents="box-none">
       <SafeAreaView onStartShouldSetResponder={() => true} accessibilityViewIsModal style={[alert ? styles.alert : styles.sheet, { backgroundColor: colors.surface, height }]}>
         {!alert ? <View style={[styles.handle, { backgroundColor: colors.separator }]} /> : null}

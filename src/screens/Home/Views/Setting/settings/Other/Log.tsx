@@ -92,9 +92,7 @@ export default memo(() => {
 
 const styles = createStyle({
   checkBox: {
-    // paddingTop: 10,
     paddingBottom: 15,
-    marginLeft: -25,
   },
   btn: {
     flexDirection: 'row',
