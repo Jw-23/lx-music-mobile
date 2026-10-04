@@ -503,6 +503,12 @@ export const removeSyncHostHistory = async(index: number) => {
 }
 
 let userApis: LX.UserApi.UserApiInfo[] = []
+let pendingUserApiWrite: Promise<unknown> = Promise.resolve()
+const queueUserApiWrite = async<T,>(write: () => Promise<T>): Promise<T> => {
+  const result = pendingUserApiWrite.then(write)
+  pendingUserApiWrite = result.catch(() => {})
+  return result
+}
 export const getUserApiList = async(): Promise<LX.UserApi.UserApiInfo[]> => {
   userApis = await getData<LX.UserApi.UserApiInfo[]>(userApiPrefix) ?? []
 
@@ -551,7 +557,7 @@ const matchInfo = (scriptInfo: string) => {
 
   return infos as Record<keyof typeof INFO_NAMES, string>
 }
-export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo> => {
+export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo> => queueUserApiWrite(async() => {
   const result = /^\/\*[\S|\s]+?\*\//.exec(script)
   if (!result) throw new Error(global.i18n.t('user_api_add_failed_tip'))
 
@@ -563,30 +569,31 @@ export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo>
     ...scriptInfo,
     allowShowUpdateAlert: true,
   }
-  userApis.push(apiInfo)
+  const nextApis = [...userApis, apiInfo]
   await saveDataMultiple([
-    [userApiPrefix, userApis],
+    [userApiPrefix, nextApis],
     [`${userApiPrefix}${apiInfo.id}`, script],
   ])
+  // All source mutations share this queue; publish only after persistence succeeds.
+  // eslint-disable-next-line require-atomic-updates
+  userApis = nextApis
   return apiInfo
-}
-export const removeUserApi = async(ids: string[]) => {
-  if (!userApis) return []
-  const _ids: string[] = []
-  for (let index = userApis.length - 1; index > -1; index--) {
-    if (ids.includes(userApis[index].id)) {
-      _ids.push(`${userApiPrefix}${userApis[index].id}`)
-      userApis.splice(index, 1)
-      ids.splice(index, 1)
-    }
+})
+export const removeUserApi = async(ids: string[]) => queueUserApiWrite(async() => {
+  const removedKeys = userApis.filter(api => ids.includes(api.id)).map(api => `${userApiPrefix}${api.id}`)
+  const nextApis = userApis.filter(api => !ids.includes(api.id))
+  await saveData(userApiPrefix, nextApis)
+  // eslint-disable-next-line require-atomic-updates -- serialized with imports and option changes
+  userApis = nextApis
+  if (removedKeys.length) {
+    await removeDataMultiple(removedKeys).catch(() => { console.warn('Failed to clean up removed source scripts') })
   }
-  await saveData(userApiPrefix, userApis)
-  if (_ids.length) await removeDataMultiple(_ids)
   return [...userApis]
-}
-export const setUserApiAllowShowUpdateAlert = async(id: string, enable: boolean) => {
-  const targetApi = userApis?.find(api => api.id == id)
-  if (!targetApi) return
-  targetApi.allowShowUpdateAlert = enable
-  await saveData(userApiPrefix, userApis)
-}
+})
+export const setUserApiAllowShowUpdateAlert = async(id: string, enable: boolean) => queueUserApiWrite(async() => {
+  if (!userApis.some(api => api.id === id)) return
+  const nextApis = userApis.map(api => api.id === id ? { ...api, allowShowUpdateAlert: enable } : api)
+  await saveData(userApiPrefix, nextApis)
+  // eslint-disable-next-line require-atomic-updates -- serialized with imports and removals
+  userApis = nextApis
+})

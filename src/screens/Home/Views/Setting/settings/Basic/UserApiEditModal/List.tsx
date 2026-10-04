@@ -1,165 +1,74 @@
 import { useCallback } from 'react'
+import { Pressable, StyleSheet, View } from 'react-native'
 import Text from '@/components/common/Text'
-import { View, TouchableOpacity, ScrollView } from 'react-native'
-import { confirmDialog, createStyle } from '@/utils/tools'
-import { useTheme } from '@/store/theme/hook'
+import Button from '@/components/common/Button'
+import { confirmDialog, toast } from '@/utils/tools'
+import { useDesignColors } from '@/theme/design'
 import { useI18n } from '@/lang'
-import { useUserApiList, state as userApiState } from '@/store/userApi'
+import { useStatus, useUserApiList, state as userApiState } from '@/store/userApi'
 import { useSettingValue } from '@/store/setting/hook'
 import { removeUserApi, setUserApiAllowShowUpdateAlert } from '@/core/userApi'
-import { BorderRadius } from '@/theme'
 import CheckBox from '@/components/common/CheckBox'
 import { Icon } from '@/components/common/Icon'
 import settingState from '@/store/setting/state'
 import apiSourceInfo from '@/utils/musicSdk/api-source-info'
 import { setApiSource } from '@/core/apiSource'
 
-const formatVersionName = (version: string) => {
-  return /^\d/.test(version) ? `v${version}` : version
-}
-const ListItem = ({ item, activeId, onRemove, onChangeAllowShowUpdateAlert }: {
-  item: LX.UserApi.UserApiInfo
-  activeId: string
-  onRemove: (id: string, name: string) => void
-  onChangeAllowShowUpdateAlert: (id: string, enabled: boolean) => void
-}) => {
-  const theme = useTheme()
-  const t = useI18n()
-  const changeAllowShowUpdateAlert = (check: boolean) => {
-    onChangeAllowShowUpdateAlert(item.id, check)
-  }
-  const handleRemove = () => {
-    onRemove(item.id, item.name)
-  }
-
-  return (
-    <View style={{ ...styles.listItem, backgroundColor: activeId == item.id ? theme['c-primary-background-active'] : 'transparent' }}>
-      <View style={styles.listItemLeft}>
-        <Text size={14}>
-          {item.name}
-          {
-            item.version ? (
-              <Text size={12} color={theme['c-font-label']}>{ '   ' + formatVersionName(item.version) }</Text>
-            ) : null
-          }
-          {
-            item.author ? (
-              <Text size={12} color={theme['c-font-label']}>{ '   ' + item.author }</Text>
-            ) : null
-          }
-        </Text>
-        {
-          item.description ? (
-            <Text size={12} color={theme['c-font-label']}>{item.description}</Text>
-          ) : null
-        }
-        <CheckBox check={item.allowShowUpdateAlert} label={t('user_api_allow_show_update_alert')} onChange={changeAllowShowUpdateAlert} size={0.86} />
-      </View>
-      <View style={styles.listItemRight}>
-        <TouchableOpacity style={styles.btn} onPress={handleRemove}>
-          <Icon name="close" color={theme['c-button-font']} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  )
-}
-
-export interface UserApiEditModalProps {
-  onSave: (rules: string) => void
-  // onSourceChange: SourceSelectorProps['onSourceChange']
-}
-export interface UserApiEditModalType {
-  show: (rules: string) => void
-}
-
-
 export default () => {
-  const userApiList = useUserApiList()
-  const apiSource = useSettingValue('common.apiSource')
-  const theme = useTheme()
+  const list = useUserApiList()
+  const activeId = useSettingValue('common.apiSource')
+  const status = useStatus()
+  const colors = useDesignColors()
   const t = useI18n()
-
   const handleRemove = useCallback(async(id: string, name: string) => {
-    const confirm = await confirmDialog({
+    if (!await confirmDialog({
       message: global.i18n.t('user_api_remove_tip', { name }),
       cancelButtonText: global.i18n.t('cancel_button_text_2'),
       confirmButtonText: global.i18n.t('confirm_button_text'),
       bgClose: false,
-    })
-    if (!confirm) return
-    void removeUserApi([id]).finally(() => {
-      if (settingState.setting['common.apiSource'] == id) {
-        let backApiId = apiSourceInfo.find(api => !api.disabled)?.id
-        if (!backApiId) backApiId = userApiState.list[0]?.id
-        setApiSource(backApiId ?? '')
+    })) return
+    try {
+      await removeUserApi([id])
+      if (settingState.setting['common.apiSource'] === id) {
+        const fallback = apiSourceInfo.find(api => !api.disabled)?.id ?? userApiState.list[0]?.id ?? ''
+        setApiSource(fallback)
       }
-    })
+    } catch (error: unknown) { toast(error instanceof Error ? error.message : String(error), 'long') }
   }, [])
-  const handleChangeAllowShowUpdateAlert = useCallback((id: string, enabled: boolean) => {
-    void setUserApiAllowShowUpdateAlert(id, enabled)
-  }, [])
-
-  return (
-    <ScrollView style={styles.scrollView} keyboardShouldPersistTaps={'always'}>
-      <View onStartShouldSetResponder={() => true}>
-        {
-          userApiList.length
-            ? userApiList.map((item) => {
-              return (
-              <ListItem
-                key={item.id}
-                item={item}
-                activeId={apiSource}
-                onRemove={handleRemove}
-                onChangeAllowShowUpdateAlert={handleChangeAllowShowUpdateAlert}
-              />
-              )
-            })
-            : <Text style={styles.tipText} color={theme['c-font-label']}>{t('user_api_empty')}</Text>
-        }
+  const changeUpdateAlert = async(id: string, enabled: boolean) => {
+    try { await setUserApiAllowShowUpdateAlert(id, enabled) } catch (error: unknown) { toast(error instanceof Error ? error.message : String(error), 'long') }
+  }
+  return <View style={styles.section}>
+    <View style={styles.heading}><Text size={20} style={{ fontWeight: '600', flex: 1 }} accessibilityRole="header">{t('user_api_imported_sources')}</Text><Text size={13} color={colors.secondary}>{list.length} / 20</Text></View>
+    <Text size={13} color={colors.secondary}>{t('user_api_select_hint')}</Text>
+    {list.length ? list.map(item => {
+      const selected = item.id === activeId
+      const initing = selected && !status.status && status.message === 'initing'
+      const failed = selected && !status.status && !initing
+      return <View key={item.id} style={[styles.card, { backgroundColor: colors.secondarySurface }]}>
+        <View style={styles.row}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${item.name}, ${t(failed ? 'user_api_retry' : 'user_api_use')}`} accessibilityState={{ selected, disabled: selected && !failed }} disabled={selected && !failed} onPress={() => { setApiSource(item.id) }} style={({ pressed }) => [styles.select, { opacity: pressed ? 0.6 : 1 }]}>
+            <Text size={17} style={{ fontWeight: '600' }}>{item.name}</Text>
+            {item.version || item.author ? <Text size={13} color={colors.secondary}>{[/^\d/.test(item.version) ? `v${item.version}` : item.version, item.author].filter(Boolean).join(' · ')}</Text> : null}
+            {item.description ? <Text size={13} color={colors.secondary} style={{ lineHeight: 19 }}>{item.description}</Text> : null}
+          </Pressable>
+          <Button accessibilityRole="button" accessibilityLabel={t('user_api_remove_label', { name: item.name })} onPress={() => { void handleRemove(item.id, item.name) }} style={styles.remove}><Icon name="remove" size={18} color={colors.destructive} /></Button>
+        </View>
+        {selected ? <View style={styles.status} accessibilityLiveRegion="polite"><Text size={13} color={failed ? colors.destructive : colors.accent} style={{ flex: 1 }}>{t(status.status ? 'setting_basic_source_status_success' : initing ? 'setting_basic_source_status_initing' : 'setting_basic_source_status_failed')}</Text>{failed ? <Button accessibilityRole="button" onPress={() => { setApiSource(item.id) }} style={styles.retry}><Text size={15} color={colors.accent}>{t('user_api_retry')}</Text></Button> : <Text size={17} color={colors.accent}>✓</Text>}</View> : <Button accessibilityRole="button" onPress={() => { setApiSource(item.id) }} style={styles.retry}><Text size={15} color={colors.accent}>{t('user_api_use')}</Text></Button>}
+        <View style={[styles.options, { borderTopColor: colors.separator }]}><CheckBox check={item.allowShowUpdateAlert} label={t('user_api_allow_show_update_alert')} onChange={enabled => { void changeUpdateAlert(item.id, enabled) }} size={0.86} /></View>
       </View>
-    </ScrollView>
-  )
+    }) : <View style={[styles.empty, { backgroundColor: colors.secondarySurface }]}><Icon name="sd-card" size={28} color={colors.secondary} /><Text size={15} color={colors.secondary} style={{ textAlign: 'center' }}>{t('user_api_empty')}</Text></View>}
+  </View>
 }
-
-
-const styles = createStyle({
-  scrollView: {
-    paddingHorizontal: 7,
-    flexGrow: 0,
-  },
-  list: {
-    paddingBottom: 15,
-    flexDirection: 'column',
-  },
-  listItem: {
-    padding: 10,
-    borderRadius: BorderRadius.normal,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  listItemLeft: {
-    paddingRight: 10,
-    flex: 1,
-    gap: 2,
-  },
-  listItemRight: {
-    flex: 0,
-    // backgroundColor: 'rgba(0, 0, 0, 0.2)',
-  },
-  // btns: {
-  //   padding: 5,
-  // },
-  btn: {
-    padding: 10,
-    // backgroundColor: 'rgba(0, 0, 0, 0.2)',
-  },
-  tipText: {
-    textAlign: 'center',
-    marginTop: 25,
-    marginBottom: 15,
-  },
+const styles = StyleSheet.create({
+  section: { gap: 12 },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  card: { padding: 16, paddingBottom: 8, borderRadius: 16 },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  select: { flex: 1, minHeight: 44, gap: 5, paddingVertical: 4 },
+  remove: { alignItems: 'center', justifyContent: 'center' },
+  status: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
+  retry: { alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: 4 },
+  options: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8 },
+  empty: { padding: 24, borderRadius: 16, alignItems: 'center', gap: 12 },
 })
-
-

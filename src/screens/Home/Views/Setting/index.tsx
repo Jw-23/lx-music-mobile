@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
+import StackTransition from '@/components/common/StackTransition'
 import { useDesignColors } from '@/theme/design'
 import { useI18n } from '@/lang'
 import { useBackHandler } from '@/utils/hooks/useBackHandler'
@@ -28,14 +29,12 @@ export default () => {
     if (Object.keys(commonState.componentIds).length === 1) { setNavActiveId(commonState.lastNavActiveId); return true }
     return false
   }, [active]))
-  if (active) {
-    return <View style={{ flex: 1 }}>
-      <View style={styles.navigation}><Pressable style={styles.back} accessibilityRole="button" onPress={() => { setActive(undefined) }}><Icon name="chevron-left" size={18} color={colors.accent} /><Text size={17} color={colors.accent}>{t('library_settings')}</Text></Pressable><Text size={17} style={{ fontWeight: '600', flex: 1, textAlign: 'right' }}>{t(`setting_${active}`)}</Text></View>
+  const detail = active ? <View style={{ flex: 1 }}>
+      <View style={styles.navigation}><Pressable style={styles.back} accessibilityRole="button" onPress={() => { setActive(undefined) }}><Icon name="chevron-left" size={18} color={colors.accent} /><Text size={17} color={colors.accent}>{t('library_settings')}</Text></Pressable><Text size={17} style={{ fontWeight: '600', flex: 1, minWidth: 0, textAlign: 'right' }}>{t(`setting_${active}`)}</Text></View>
       <Text size={34} accessibilityRole="header" style={styles.title}>{t(`setting_${active}`)}</Text>
       <ScrollView contentContainerStyle={{ padding: 20 }} keyboardShouldPersistTaps="handled"><Main activeId={active} /></ScrollView>
-    </View>
-  }
-  return <ScrollView contentContainerStyle={styles.content}>
+    </View> : null
+  return <StackTransition detailKey={active} detail={detail}><ScrollView contentContainerStyle={styles.content}>
     <Text size={34} accessibilityRole="header" style={[styles.title, { paddingHorizontal: 0 }]}>{t('library_settings')}</Text>
     {groups.map((group, groupIndex) => <View key={groupIndex} style={[styles.group, { backgroundColor: colors.surface }]}>
       {group.map(([id, icon, background], index) => <Pressable key={id} accessibilityRole="button" onPress={() => { global.lx.settingActiveId = id; setActive(id) }} style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.secondarySurface : colors.surface }]}>
@@ -47,7 +46,7 @@ export default () => {
       {showBack ? <Pressable style={styles.row} accessibilityRole="button" onPress={backHome}><Text size={17} color={colors.accent}>{t('back_home')}</Text></Pressable> : null}
       {showExit ? <Pressable style={styles.row} accessibilityRole="button" onPress={async() => { if (await confirmDialog({ message: t('exit_app_tip') })) exitApp('Exit Btn') }}><Text size={17} color={colors.destructive}>{t('nav_exit')}</Text></Pressable> : null}
     </View> : null}
-  </ScrollView>
+  </ScrollView></StackTransition>
 }
 const styles = StyleSheet.create({
   title: { fontWeight: '700', paddingHorizontal: 20, paddingBottom: 20 },
@@ -57,5 +56,5 @@ const styles = StyleSheet.create({
   icon: { width: 30, height: 30, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   label: { flex: 1, minHeight: 56, paddingVertical: 12, paddingRight: 16, flexDirection: 'row', alignItems: 'center', gap: 16 },
   navigation: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 8 },
-  back: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  back: { flexShrink: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6 },
 })

@@ -1,9 +1,8 @@
 import { memo, useCallback, useMemo, useRef } from 'react'
 
-import { View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import SubTitle from '../../components/SubTitle'
-import CheckBox from '@/components/common/CheckBox'
 import { createStyle } from '@/utils/tools'
 import { setApiSource } from '@/core/apiSource'
 import { useI18n } from '@/lang'
@@ -13,7 +12,7 @@ import { useStatus, useUserApiList } from '@/store/userApi'
 import Button from '../../components/Button'
 import UserApiEditModal, { type UserApiEditModalType } from './UserApiEditModal'
 import Text from '@/components/common/Text'
-import { useTheme } from '@/store/theme/hook'
+import { useDesignColors } from '@/theme/design'
 // import { importUserApi, removeUserApi } from '@/core/userApi'
 
 const apiSourceList = apiSourceInfo.map(api => ({
@@ -36,21 +35,15 @@ const Item = ({ id, name, desc, statusLabel, change }: {
   change: (id: string) => void
 }) => {
   const isActive = useActive(id)
-  const theme = useTheme()
-  // const [toggleCheckBox, setToggleCheckBox] = useState(false)
-  return (
-    <CheckBox marginBottom={5} check={isActive} onChange={() => { change(id) }} need>
-      <Text style={styles.sourceLabel}>
-        {name}
-        {
-          desc ? <Text style={styles.sourceDesc} color={theme['c-500']} size={13}>  {desc}</Text> : null
-        }
-        {
-          statusLabel ? <Text style={styles.sourceStatus} size={13}>  {statusLabel}</Text> : null
-        }
-      </Text>
-    </CheckBox>
-  )
+  const colors = useDesignColors()
+  return <Pressable accessibilityRole="radio" accessibilityState={{ checked: isActive }} onPress={() => { if (!isActive) change(id) }} style={({ pressed }) => [styles.sourceRow, { backgroundColor: pressed ? colors.secondarySurface : 'transparent', borderBottomColor: colors.separator }]}>
+    <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+      <Text size={17}>{name}</Text>
+      {desc ? <Text color={colors.secondary} size={13}>{desc}</Text> : null}
+      {statusLabel ? <Text color={colors.accent} size={13} accessibilityLiveRegion="polite">{statusLabel}</Text> : null}
+    </View>
+    <Text color={colors.accent} size={19} style={{ width: 24, textAlign: 'center' }}>{isActive ? '✓' : ''}</Text>
+  </Pressable>
 }
 
 export default memo(() => {
@@ -76,7 +69,7 @@ export default memo(() => {
       return status
     }
     return userApiListRaw.map(api => {
-      const statusLabel = api.id == apiSourceSetting ? `[${getApiStatus()}]` : ''
+      const statusLabel = api.id == apiSourceSetting ? getApiStatus() : ''
       return {
         id: api.id,
         name: api.name,
@@ -124,13 +117,5 @@ const styles = createStyle({
     marginTop: 10,
     flexDirection: 'row',
   },
-  sourceLabel: {
-
-  },
-  sourceDesc: {
-
-  },
-  sourceStatus: {
-
-  },
+  sourceRow: { minHeight: 52, paddingVertical: 12, paddingHorizontal: 4, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 0.5 },
 })

@@ -27,20 +27,28 @@ export const setUserApiList: typeof action['setUserApiList'] = (list) => {
   action.setUserApiList(list)
 }
 
-export const importUserApi = async(script: string) => {
+let pendingUserApiChange: Promise<unknown> = Promise.resolve()
+const queueUserApiChange = async<T,>(change: () => Promise<T>): Promise<T> => {
+  const result = pendingUserApiChange.then(change)
+  pendingUserApiChange = result.catch(() => {})
+  return result
+}
+export const importUserApi = async(script: string) => queueUserApiChange(async() => {
+  if (state.list.length >= 20) throw new Error(global.i18n.t('user_api_max_tip'))
   const info = await addUserApi(script)
   action.addUserApi(info)
-}
+  return info
+})
 
-export const removeUserApi = async(ids: string[]) => {
+export const removeUserApi = async(ids: string[]) => queueUserApiChange(async() => {
   const list = await removeUserApiFromStore(ids)
   action.setUserApiList(list)
-}
+})
 
-export const setUserApiAllowShowUpdateAlert = async(id: string, enable: boolean) => {
+export const setUserApiAllowShowUpdateAlert = async(id: string, enable: boolean) => queueUserApiChange(async() => {
   await setUserApiAllowShowUpdateAlertFromStore(id, enable)
   action.setUserApiAllowShowUpdateAlert(id, enable)
-}
+})
 
 export const log = {
   r_info(...params: any[]) {

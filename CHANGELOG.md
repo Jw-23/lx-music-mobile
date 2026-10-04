@@ -6,6 +6,21 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.9](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.8...v1.10.9) - 2026-10-04
+
+### 优化
+- 文件与链接导入统一到源管理面板，支持原位错误提示、保留链接重试和导入后直接启用。
+- 源卡片展示初始化结果与重试入口，长名称、版本和说明独立排版。
+- 设置详情横向推进与返回并保留列表位置；主导航区分点击过渡与原生滑动，提前加载相邻页面。
+
+### 修复
+- 并发导入超出源数量上限，以及保存失败留下源记录。
+- 并发删除/更新偏好与导入竞争，删除失败仍切换当前源。
+- 快速导航的旧页回调、返回动画中断及减少动态效果的处理。
+
+### 验证
+- 114 项单元测试、全项目类型检查和 lint 通过。
+
 ## [1.10.8](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.7...v1.10.8) - 2026-10-04
 
 ### 修复

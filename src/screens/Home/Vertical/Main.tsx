@@ -10,7 +10,6 @@ import { createStyle } from '@/utils/tools'
 import PagerView, { type PageScrollStateChangedNativeEvent, type PagerViewOnPageSelectedEvent } from 'react-native-pager-view'
 import { setNavActiveId } from '@/core/common'
 import settingState from '@/store/setting/state'
-import { useNavActiveId } from '@/store/common/hook'
 import PageTransition from '@/components/common/PageTransition'
 
 const hideKeys = [
@@ -20,16 +19,14 @@ const hideKeys = [
 ] as Readonly<Array<keyof LX.AppSetting>>
 
 const SearchPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_search')
+  const [visible, setVisible] = useState(Math.abs(viewMap[commonState.navActiveId] - viewMap.nav_search) <= 1)
   const component = useMemo(() => <Search />, [])
   useEffect(() => {
     let currentId: CommonState['navActiveId'] = commonState.navActiveId
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
-      if (id == 'nav_search') {
-        requestAnimationFrame(() => {
-          setVisible(true)
-        })
+      if (Math.abs(viewMap[id] - viewMap.nav_search) <= 1) {
+        setVisible(true)
       }
     }
     const handleHide = () => {
@@ -55,16 +52,14 @@ const SearchPage = () => {
   return visible ? component : null
 }
 const SongListPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_songlist')
+  const [visible, setVisible] = useState(Math.abs(viewMap[commonState.navActiveId] - viewMap.nav_songlist) <= 1)
   const component = useMemo(() => <SongList />, [])
   useEffect(() => {
     let currentId: CommonState['navActiveId'] = commonState.navActiveId
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
-      if (id == 'nav_songlist') {
-        requestAnimationFrame(() => {
-          setVisible(true)
-        })
+      if (Math.abs(viewMap[id] - viewMap.nav_songlist) <= 1) {
+        setVisible(true)
       }
     }
     const handleHide = () => {
@@ -91,16 +86,14 @@ const SongListPage = () => {
   // return activeId == 1 || activeId == 0  ? SongList : null
 }
 const LeaderboardPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_top')
+  const [visible, setVisible] = useState(Math.abs(viewMap[commonState.navActiveId] - viewMap.nav_top) <= 1)
   const component = useMemo(() => <Leaderboard />, [])
   useEffect(() => {
     let currentId: CommonState['navActiveId'] = commonState.navActiveId
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
-      if (id == 'nav_top') {
-        requestAnimationFrame(() => {
-          setVisible(true)
-        })
+      if (Math.abs(viewMap[id] - viewMap.nav_top) <= 1) {
+        setVisible(true)
       }
     }
     const handleHide = () => {
@@ -126,16 +119,14 @@ const LeaderboardPage = () => {
   return visible ? component : null
 }
 const MylistPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_love')
+  const [visible, setVisible] = useState(Math.abs(viewMap[commonState.navActiveId] - viewMap.nav_love) <= 1)
   const component = useMemo(() => <Mylist />, [])
   useEffect(() => {
     let currentId: CommonState['navActiveId'] = commonState.navActiveId
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
-      if (id == 'nav_love') {
-        requestAnimationFrame(() => {
-          setVisible(true)
-        })
+      if (Math.abs(viewMap[id] - viewMap.nav_love) <= 1) {
+        setVisible(true)
       }
     }
     const handleHide = () => {
@@ -161,14 +152,12 @@ const MylistPage = () => {
   return visible ? component : null
 }
 const SettingPage = () => {
-  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_setting')
+  const [visible, setVisible] = useState(Math.abs(viewMap[commonState.navActiveId] - viewMap.nav_setting) <= 1)
   const component = useMemo(() => <Setting />, [])
   useEffect(() => {
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
-      if (id == 'nav_setting') {
-        requestAnimationFrame(() => {
-          setVisible(true)
-        })
+      if (Math.abs(viewMap[id] - viewMap.nav_setting) <= 1) {
+        setVisible(true)
       }
     }
     global.state_event.on('navActiveIdUpdated', handleNavIdUpdate)
@@ -196,9 +185,11 @@ const indexMap = [
 ] as const
 
 const Main = () => {
-  const activeId = useNavActiveId()
+  const [transition, setTransition] = useState({ key: String(commonState.navActiveId), direction: 1, enabled: true })
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null)
-  let activeIndexRef = useRef(viewMap[commonState.navActiveId])
+  const activeIndexRef = useRef(viewMap[commonState.navActiveId])
+  const pendingIndex = useRef<number | null>(null)
+  const tapRevision = useRef(0)
   // const isScrollingRef = useRef(false)
   // const scrollPositionRef = useRef(-1)
 
@@ -218,7 +209,9 @@ const Main = () => {
   // }, [setNavActiveIndex])
 
   const onPageSelected = useCallback(({ nativeEvent }: PagerViewOnPageSelectedEvent) => {
-    // console.log(nativeEvent)
+    // Ignore a late callback from an earlier tab tap.
+    if (pendingIndex.current !== null && pendingIndex.current !== nativeEvent.position) return
+    pendingIndex.current = null
     activeIndexRef.current = nativeEvent.position
     if (activeIndexRef.current != viewMap[commonState.navActiveId]) {
       setNavActiveId(indexMap[activeIndexRef.current])
@@ -227,6 +220,8 @@ const Main = () => {
 
   const onPageScrollStateChanged = useCallback(({ nativeEvent }: PageScrollStateChangedNativeEvent) => {
     // console.log(nativeEvent)
+    if (nativeEvent.pageScrollState === 'dragging') pendingIndex.current = null
+    if (nativeEvent.pageScrollState !== 'idle') setTransition(current => ({ ...current, enabled: false }))
     const idle = nativeEvent.pageScrollState == 'idle'
     if (global.lx.homePagerIdle != idle) global.lx.homePagerIdle = idle
     // if (nativeEvent.pageScrollState != 'idle') return
@@ -250,7 +245,10 @@ const Main = () => {
     const handleUpdate = (id: CommonState['navActiveId']) => {
       const index = viewMap[id]
       if (activeIndexRef.current == index) return
+      const direction = index > activeIndexRef.current ? 1 : -1
       activeIndexRef.current = index
+      pendingIndex.current = index
+      setTransition({ key: `${id}:${++tapRevision.current}`, direction, enabled: true })
       pagerViewRef.current?.setPageWithoutAnimation(index)
     }
     const handleConfigUpdate = (keys: Array<keyof LX.AppSetting>, setting: Partial<LX.AppSetting>) => {
@@ -310,7 +308,7 @@ const Main = () => {
     </PagerView>
   ), [onPageScrollStateChanged, onPageSelected])
 
-  return <PageTransition transitionKey={activeId}>{component}</PageTransition>
+  return <PageTransition transitionKey={transition.key} direction={transition.direction} enabled={transition.enabled}>{component}</PageTransition>
 }
 
 const styles = createStyle({
