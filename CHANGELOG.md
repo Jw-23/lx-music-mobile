@@ -6,6 +6,19 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.10](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.9...v1.10.10) - 2026-10-05
+
+### 导航与深色歌单修复
+
+- 主页滑动顺序统一为资料库、发现、排行榜、搜索、设置，与底部菜单及侧栏一致。
+- 修复点击切换页面时过渡动画被提前取消的问题；资料库内打开歌单、最近播放及返回增加平滑过渡。
+- 深色歌单采用更深的背景与更清晰的标题、歌手和时长文字；来源暂不支持时保持文字及操作按钮清晰。
+- 保留管理歌单入口和功能，并支持减少动态效果设置。
+
+### 验证
+
+- 116 项测试、lint 和 Android JavaScript bundle 构建通过。
+
 ## [1.10.9](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.8...v1.10.9) - 2026-10-04
 
 ### 优化
