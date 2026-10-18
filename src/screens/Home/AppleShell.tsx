@@ -4,21 +4,13 @@ import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { setNavActiveId } from '@/core/common'
 import { useHorizontalMode } from '@/utils/hooks'
 import { useI18n } from '@/lang'
-import { useDesignColors, design } from '@/theme/design'
+import { useDesignColors } from '@/theme/design'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import StatusBar from '@/components/common/StatusBar'
 import PlayerBar from '@/components/player/PlayerBar'
 import Main from './Vertical/Main'
-import SearchTypeSelector from './Views/Search/SearchTypeSelector'
-
-const tabs = [
-  { id: 'nav_love', icon: 'album', title: 'library_title' },
-  { id: 'nav_songlist', icon: 'home', title: 'library_discover' },
-  { id: 'nav_top', icon: 'leaderboard', title: 'library_charts' },
-  { id: 'nav_search', icon: 'search-2', title: 'library_search' },
-  { id: 'nav_setting', icon: 'setting', title: 'library_settings' },
-] as const
+import { HOME_TABS as tabs } from './navigationModel'
 
 export default () => {
   const active = useNavActiveId()
@@ -54,10 +46,6 @@ export default () => {
       <View style={[styles.body, wide ? styles.row : null, { backgroundColor: colors.background }]}>
         {wide ? navigation : null}
         <View style={styles.content}>
-          {active !== 'nav_love' && active !== 'nav_setting' ? <View style={styles.header}>
-            <Text size={design.type.largeTitle} style={styles.title} accessibilityRole="header">{t(tabs.find(tab => tab.id === active)!.title)}</Text>
-            {active === 'nav_search' ? <SearchTypeSelector /> : null}
-          </View> : null}
           <Main />
           <PlayerBar isHome />
           {!wide ? navigation : null}
@@ -72,8 +60,6 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   row: { flexDirection: 'row' },
   content: { flex: 1, overflow: 'hidden' },
-  header: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12, flexDirection: 'row', alignItems: 'center' },
-  title: { flex: 1, fontWeight: '700', letterSpacing: 0.3 },
   tabs: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, minHeight: 60, paddingHorizontal: 6 },
   tab: { flex: 1, minHeight: 56, alignItems: 'center', justifyContent: 'center', paddingVertical: 7 },
   tabLabel: { marginTop: 4, fontWeight: '500' },

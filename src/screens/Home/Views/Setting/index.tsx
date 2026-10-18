@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import StackTransition from '@/components/common/StackTransition'
+import { useHomeScrollLock } from '../../pagerScroll'
 import { useDesignColors } from '@/theme/design'
 import { useI18n } from '@/lang'
 import { useBackHandler } from '@/utils/hooks/useBackHandler'
@@ -19,6 +20,8 @@ const groups = [
 ] as const
 export default () => {
   const [active, setActive] = useState<SettingScreenIds>()
+  const [detailVisible, setDetailVisible] = useState(false)
+  useHomeScrollLock('nav_setting', !!active || detailVisible)
   const showBack = useSettingValue('common.showBackBtn')
   const showExit = useSettingValue('common.showExitBtn')
   const colors = useDesignColors()
@@ -34,7 +37,7 @@ export default () => {
       <Text size={34} accessibilityRole="header" style={styles.title}>{t(`setting_${active}`)}</Text>
       <ScrollView contentContainerStyle={{ padding: 20 }} keyboardShouldPersistTaps="handled"><Main activeId={active} /></ScrollView>
     </View> : null
-  return <StackTransition detailKey={active} detail={detail}><ScrollView contentContainerStyle={styles.content}>
+  return <StackTransition detailKey={active} detail={detail} onVisibleChange={setDetailVisible}><ScrollView contentContainerStyle={styles.content}>
     <Text size={34} accessibilityRole="header" style={[styles.title, { paddingHorizontal: 0 }]}>{t('library_settings')}</Text>
     {groups.map((group, groupIndex) => <View key={groupIndex} style={[styles.group, { backgroundColor: colors.surface }]}>
       {group.map(([id, icon, background], index) => <Pressable key={id} accessibilityRole="button" onPress={() => { global.lx.settingActiveId = id; setActive(id) }} style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.secondarySurface : colors.surface }]}>

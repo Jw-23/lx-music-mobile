@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState, type Ref } from 'react'
+import { forwardRef, useImperativeHandle, useRef, useState, useEffect, type Ref } from 'react'
 import { Keyboard, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native'
 import Modal, { type ModalType } from './Modal'
 import Text from './Text'
@@ -46,6 +46,12 @@ const icons: Record<string, string> = {
 }
 const Component = <M extends Menus>({ menus, onPress, onHide, activeId, title, presentation }: MenuProps<M>, ref: Ref<MenuType>) => {
   const modal = useRef<ModalType>(null)
+  const pendingAction = useRef<M[number]>()
+  const handoff = useRef({ generation: 0, frame: undefined as number | undefined })
+  useEffect(() => {
+    const current = handoff.current
+    return () => { current.generation++; if (current.frame !== undefined) cancelAnimationFrame(current.frame) }
+  }, [])
   const [position, setPosition] = useState<Position>({ x: 0, y: 0, w: 0, h: 0 })
   const colors = useDesignColors()
   const window = useWindowSize()
@@ -53,13 +59,26 @@ const Component = <M extends Menus>({ menus, onPress, onHide, activeId, title, p
   const selection = presentation === 'selection' || (presentation !== 'actions' && activeId !== undefined)
   const hide = () => { modal.current?.setVisible(false) }
   useImperativeHandle(ref, () => ({
-    show(position) { Keyboard.dismiss(); setPosition(position); modal.current?.setVisible(true) },
+    show(position) { handoff.current.generation++; pendingAction.current = undefined; Keyboard.dismiss(); setPosition(position); modal.current?.setVisible(true) },
     hide,
   }))
   const choose = (item: M[number]) => {
+    if (pendingAction.current) return
+    pendingAction.current = item
     hide()
-    // Let the native modal dismiss before presenting a subsequent editor or confirmation.
-    setTimeout(() => { onPress(item) }, 220)
+  }
+  const finishHide = () => {
+    const item = pendingAction.current
+    pendingAction.current = undefined
+    const generation = handoff.current.generation
+    onHide?.()
+    // Allow the hidden modal's React commit before opening the next native surface.
+    if (item) {
+      handoff.current.frame = requestAnimationFrame(() => {
+        handoff.current.frame = undefined
+        if (generation === handoff.current.generation) onPress(item)
+      })
+    }
   }
   const width = Math.min(360, window.width - 32)
   const availableHeight = Math.max(120, window.height - 96)
@@ -77,7 +96,7 @@ const Component = <M extends Menus>({ menus, onPress, onHide, activeId, title, p
       </Pressable>
     })}
   </ScrollView>
-  return <Modal ref={modal} transition={selection ? 'popover' : 'sheet'} onHide={onHide} bgColor="rgba(0,0,0,0.3)">
+  return <Modal ref={modal} transition={selection ? 'popover' : 'sheet'} onHide={finishHide} bgColor="rgba(0,0,0,0.3)">
     {selection ? <View onStartShouldSetResponder={() => true} style={[styles.popover, { width, maxHeight: availableHeight, top, left: Math.max(16, Math.min(position.x, window.width - width - 16)), backgroundColor: colors.surface }]}>{rows}</View> : <SafeAreaView style={styles.overlay} pointerEvents="box-none">
       <View onStartShouldSetResponder={() => true} style={[styles.actions, { maxHeight: Math.max(100, Math.min(window.height * 0.78, window.height - 140)), backgroundColor: colors.surface }]}>{rows}</View>
       <Pressable onPress={hide} accessibilityRole="button" style={({ pressed }) => [styles.cancel, { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}><Text size={17} color={colors.accent} style={{ fontWeight: '600' }}>{t('cancel')}</Text></Pressable>

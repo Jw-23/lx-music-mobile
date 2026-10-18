@@ -6,6 +6,21 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.10](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.9...v1.10.10) - 2026-10-18
+
+### 修复
+- 统一底栏、侧栏、滑动容器的页面顺序，解决资料库滑动直接进入设置。
+- 页面标题纳入对应页面，避免标签切换时高度和标题突然跳变。
+- 详情页隔离横向主导航手势，菜单后续操作等待关闭过渡结束，防止误切页及弹窗衔接冲突。
+
+### 优化
+- 相邻主标签使用原生滑动，跨标签切换使用方向弹簧过渡。
+- 资料库的歌单、最近播放、管理页面与设置详情增加连贯的推进和返回，保留列表位置及筛选。
+- 调整弹层进出节奏，兼容减少动态效果、动画中断和快速切换。
+
+### 验证
+- 121 项单元测试、全项目类型检查和 lint 通过。
+
 ## [1.10.9](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.8...v1.10.9) - 2026-10-04
 
 ### 优化

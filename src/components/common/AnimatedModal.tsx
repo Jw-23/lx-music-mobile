@@ -35,9 +35,9 @@ export default ({ visible, onHidden, onBackgroundPress, backgroundLabel, backgro
       }
       const animation = Animated.parallel([
         opening
-          ? Animated.spring(progress, { toValue, stiffness: 240, damping: 28, mass: 0.9, overshootClamping: true, useNativeDriver: true })
-          : Animated.timing(progress, { toValue, duration: 180, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(backdrop, { toValue, duration: opening ? 240 : 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          ? Animated.spring(progress, { toValue, stiffness: 240, damping: 30, mass: 1, overshootClamping: true, useNativeDriver: true })
+          : Animated.timing(progress, { toValue, duration: 230, easing: Easing.bezier(0.4, 0, 1, 1), useNativeDriver: true }),
+        Animated.timing(backdrop, { toValue, duration: opening ? 280 : 230, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ])
       animation.start(({ finished }) => { if (finished) complete() })
       return () => { animation.stop() }
@@ -49,13 +49,15 @@ export default ({ visible, onHidden, onBackgroundPress, backgroundLabel, backgro
 
   const interpolate = (from: number, to: number) => progress.interpolate({ inputRange: [0, 1], outputRange: [from, to], extrapolate: 'clamp' })
   const transform = transition === 'sheet'
-    ? [{ translateY: interpolate(56, 0) }]
-    : transition === 'alert' ? [{ scale: interpolate(0.96, 1) }] : [{ translateY: interpolate(6, 0) }, { scale: interpolate(0.98, 1) }]
+    ? [{ translateY: interpolate(88, 0) }]
+    : transition === 'alert' ? [{ scale: interpolate(0.96, 1) }] : [{ translateY: interpolate(10, 0) }, { scale: interpolate(0.98, 1) }]
+  // Sheets settle spatially; their text reaches full opacity early in the entrance.
+  const contentOpacity = transition === 'sheet' ? progress.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0, 1, 1], extrapolate: 'clamp' }) : progress
   return <Modal {...props} visible={presented} transparent animationType="none" hardwareAccelerated statusBarTranslucent onShow={event => { controller.onShow(); onShow?.(event) }}>
     <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor, opacity: backdrop }]}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onBackgroundPress} disabled={!onBackgroundPress} accessibilityRole="button" accessibilityLabel={backgroundLabel} />
     </Animated.View>
-    <Animated.View style={{ flex: 1, opacity: progress, transform }} pointerEvents={visible ? 'box-none' : 'none'}>
+    <Animated.View style={{ flex: 1, opacity: contentOpacity, transform }} pointerEvents={visible ? 'box-none' : 'none'}>
       {lastChildren.current}
     </Animated.View>
   </Modal>

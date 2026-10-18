@@ -5,7 +5,10 @@ import Mylist from '../Views/Mylist'
 import Leaderboard from '../Views/Leaderboard'
 import Setting from '../Views/Setting'
 import PageTransition from '@/components/common/PageTransition'
-import commonState, { type InitState as CommonState } from '@/store/common/state'
+import { HOME_PAGE_IDS } from '../navigationModel'
+import HomePageHeader from '../HomePageHeader'
+import { View } from 'react-native'
+import commonState from '@/store/common/state'
 
 
 const Main = () => {
@@ -13,11 +16,11 @@ const Main = () => {
 
   const previous = useRef(id)
   const direction = useRef(1)
-  const order: Array<CommonState['navActiveId']> = ['nav_search', 'nav_songlist', 'nav_top', 'nav_love', 'nav_setting']
+  const order = HOME_PAGE_IDS
   if (previous.current !== id) { direction.current = order.indexOf(id) > order.indexOf(previous.current) ? 1 : -1; previous.current = id }
 
   useEffect(() => {
-    const handleUpdate = (id: CommonState['navActiveId']) => {
+    const handleUpdate = (id: typeof commonState.navActiveId) => {
       setId(id)
     }
     global.state_event.on('navActiveIdUpdated', handleUpdate)
@@ -37,7 +40,7 @@ const Main = () => {
     }
   }, [id])
 
-  return <PageTransition transitionKey={id} direction={direction.current}>{component}</PageTransition>
+  return <PageTransition transitionKey={id} direction={direction.current}><View style={{ flex: 1 }}><HomePageHeader id={id} />{component}</View></PageTransition>
 }
 
 

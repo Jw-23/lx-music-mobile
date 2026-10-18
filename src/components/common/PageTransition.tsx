@@ -19,11 +19,11 @@ export default ({ transitionKey, direction = 1, enabled = true, children }: {
     opacity.setValue(1)
     offset.setValue(0)
     if (!changed || reduced || !enabled) return
-    opacity.setValue(0.88)
-    offset.setValue(direction < 0 ? -12 : 12)
+    opacity.setValue(0.94)
+    offset.setValue(direction < 0 ? -20 : 20)
     const animation = Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(offset, { toValue: 0, duration: 240, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.spring(offset, { toValue: 0, stiffness: 280, damping: 30, mass: 0.9, overshootClamping: true, useNativeDriver: true }),
     ])
     animation.start()
     return () => { animation.stop() }

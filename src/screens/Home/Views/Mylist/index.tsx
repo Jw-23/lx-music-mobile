@@ -4,6 +4,8 @@ import Text from '@/components/common/Text'
 import Image from '@/components/common/Image'
 import { Icon } from '@/components/common/Icon'
 import PlaylistEditor from '@/components/PlaylistEditor'
+import StackTransition from '@/components/common/StackTransition'
+import { useHomeScrollLock } from '../../pagerScroll'
 import MusicAddModal, { type MusicAddModalType } from '@/components/MusicAddModal'
 import { useMyList, useActiveListId } from '@/store/list/hook'
 import { useNavActiveId } from '@/store/common/hook'
@@ -46,6 +48,9 @@ export default () => {
   const t = useI18n()
   const { width, onLayout } = useLayout()
   const [route, setRoute] = useState<Route>('overview')
+  const [detailVisible, setDetailVisible] = useState(false)
+  useHomeScrollLock('nav_love', route !== 'overview' || detailVisible)
+  const baseRoute = useRef<Route>('playlist')
   const managerOrigin = useRef<Route>('overview')
   const [query, setQuery] = useState('')
   const [songsByList, setSongsByList] = useState<Record<string, LX.Music.MusicInfo[]>>({})
@@ -134,17 +139,16 @@ export default () => {
     <Pressable style={styles.action} onPress={() => { setNavActiveId('nav_search') }} accessibilityRole="button"><Text size={17} color={colors.accent}>{t('library_search')}</Text></Pressable>
   </View>
 
-  return (
-    <View style={{ flex: 1 }} onLayout={onLayout}>
+  const renderScreen = (screenRoute: Route) => <View style={{ flex: 1 }}>
       <View style={[styles.header, wide && { flexDirection: 'row', alignItems: 'center', gap: 20 }]}>
-        {route !== 'overview' ? <Pressable style={styles.back} onPress={() => { setRoute(route === 'manage' ? managerOrigin.current : 'overview') }} accessibilityRole="button" accessibilityLabel={t('library_back')}><Icon name="chevron-left" size={20} color={colors.accent} /><Text color={colors.accent} size={17}>{t('library_title')}</Text></Pressable> : null}
+        {screenRoute !== 'overview' ? <Pressable style={styles.back} onPress={() => { setRoute(screenRoute === 'manage' ? managerOrigin.current : 'overview') }} accessibilityRole="button" accessibilityLabel={t('library_back')}><Icon name="chevron-left" size={20} color={colors.accent} /><Text color={colors.accent} size={17}>{t('library_title')}</Text></Pressable> : null}
         <View style={[styles.heading, wide && { flex: 1 }]}>
-          <Text size={wide ? 22 : route === 'overview' ? design.type.largeTitle : 28} style={styles.largeTitle} accessibilityRole="header" numberOfLines={1}>{t(route === 'overview' ? 'library_title' : route === 'recent' ? 'library_recent' : route === 'manage' ? 'library_manage' : 'library_playlists')}</Text>
-          {route === 'overview' ? <Pressable style={styles.action} onPress={create} accessibilityRole="button" accessibilityLabel={t('library_new_playlist')}><Text size={32} color={colors.accent}>+</Text></Pressable> : null}
-          {route === 'recent' && recent.length ? <Pressable onPress={clearHistory} style={styles.action} accessibilityRole="button" accessibilityLabel={t('library_clear')}><Icon name="eraser" size={20} color={colors.accent} /></Pressable> : null}
+          <Text size={wide ? 22 : screenRoute === 'overview' ? design.type.largeTitle : 28} style={styles.largeTitle} accessibilityRole="header" numberOfLines={1}>{t(screenRoute === 'overview' ? 'library_title' : screenRoute === 'recent' ? 'library_recent' : screenRoute === 'manage' ? 'library_manage' : 'library_playlists')}</Text>
+          {screenRoute === 'overview' ? <Pressable style={styles.action} onPress={create} accessibilityRole="button" accessibilityLabel={t('library_new_playlist')}><Text size={32} color={colors.accent}>+</Text></Pressable> : null}
+          {screenRoute === 'recent' && recent.length ? <Pressable onPress={clearHistory} style={styles.action} accessibilityRole="button" accessibilityLabel={t('library_clear')}><Icon name="eraser" size={20} color={colors.accent} /></Pressable> : null}
         </View>
       </View>
-      {route === 'overview' ? <FlatList
+      {screenRoute === 'overview' ? <FlatList
         data={lists.filter(list => list.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))}
         key={columns} numColumns={columns} keyExtractor={item => item.id} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.overview}
         columnWrapperStyle={{ gap: 16 }}
@@ -173,7 +177,7 @@ export default () => {
           <Text size={13} color={colors.secondary}>{t('library_song_count', { count: songsByList[item.id]?.length ?? 0 })}</Text>
         </Pressable>}
         ListEmptyComponent={<Text style={styles.emptyHint} color={colors.secondary}>{t('library_no_matches')}</Text>}
-      /> : route === 'manage' ? <PlaylistManager /> : route === 'recent' ? <FlatList
+      /> : screenRoute === 'manage' ? <PlaylistManager /> : screenRoute === 'recent' ? <FlatList
         data={recent} keyExtractor={entry => entry.musicInfo.id} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, flexGrow: 1 }}
         ListEmptyComponent={empty(true)}
         renderItem={({ item }) => <View style={[styles.songRow, { borderBottomColor: colors.separator }]}>
@@ -200,6 +204,17 @@ export default () => {
           <CollectionDetail />
         </View>
       </>}
+    </View>
+  if (route !== 'overview' && route !== 'manage') baseRoute.current = route
+  if (route === 'manage' && managerOrigin.current === 'overview') baseRoute.current = 'manage'
+  const detail = <StackTransition detailKey={route === 'manage' && managerOrigin.current === 'playlist' ? 'manager' : undefined} detail={renderScreen('manage')}>
+    {renderScreen(baseRoute.current)}
+  </StackTransition>
+  return (
+    <View style={{ flex: 1 }} onLayout={onLayout}>
+      <StackTransition detailKey={route === 'overview' ? undefined : 'library-detail'} detail={detail} onVisibleChange={setDetailVisible}>
+        {renderScreen('overview')}
+      </StackTransition>
       <PlaylistEditor visible={editorVisible} list={editingList} onClose={() => { setEditorVisible(false) }} onCreated={openList} />
       <MusicAddModal ref={addRef} />
     </View>
