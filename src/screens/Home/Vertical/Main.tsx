@@ -14,7 +14,7 @@ import PageTransition from '@/components/common/PageTransition'
 import useReducedMotion from '@/utils/hooks/useReducedMotion'
 import HomePageHeader from '../HomePageHeader'
 import { HomePagerScrollContext } from '../pagerScroll'
-import { HOME_PAGE_IDS, homePageIndex, isHomePageNearby, type HomeTabId } from '../navigationModel'
+import { HOME_TAB_IDS as HOME_PAGE_IDS, HOME_TAB_INDEX as homePageIndex, isHomePageNearby, type HomeTabId } from '@/config/homeTabs'
 
 const hideKeys = ['list.isShowAlbumName', 'list.isShowInterval', 'theme.fontShadow'] as Readonly<Array<keyof LX.AppSetting>>
 const screens = { nav_love: Mylist, nav_songlist: SongList, nav_top: Leaderboard, nav_search: Search, nav_setting: Setting }

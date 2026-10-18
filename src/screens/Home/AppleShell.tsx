@@ -10,7 +10,7 @@ import Text from '@/components/common/Text'
 import StatusBar from '@/components/common/StatusBar'
 import PlayerBar from '@/components/player/PlayerBar'
 import Main from './Vertical/Main'
-import { HOME_TABS as tabs } from './navigationModel'
+import { HOME_TABS as tabs } from '@/config/homeTabs'
 
 export default () => {
   const active = useNavActiveId()

@@ -11,6 +11,7 @@ import Text from '@/components/common/Text'
 import Image from '@/components/common/Image'
 import { useQuickAdd } from '@/components/QuickAddProvider'
 import { useI18n } from '@/lang'
+import { useCollectionColors } from '../colors'
 
 export const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
 
@@ -28,6 +29,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   isShowInterval: boolean
 }) => {
   const theme = useTheme()
+  const colors = useCollectionColors()
   const add = useQuickAdd()
   const labels = useI18n()
 
@@ -48,22 +50,22 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   const singer = `${item.singer}${isShowAlbumName && item.meta.albumName ? ` · ${item.meta.albumName}` : ''}`
 
   return (
-    <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, borderBottomColor: theme['c-border-background'], backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)', opacity: isSupported ? 1 : 0.5 }}>
+    <View style={{ ...styles.listItem, width: rowInfo.rowWidth, height: ITEM_HEIGHT, borderBottomColor: theme.isDark ? colors.separator : theme['c-border-background'], backgroundColor: isSelected ? theme.isDark ? colors.secondarySurface : theme['c-primary-background-hover'] : 'transparent', opacity: theme.isDark || isSupported ? 1 : 0.5 }}>
       <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }}>
-        <Image url={item.meta.picUrl} style={styles.art} />
+        <Image url={item.meta.picUrl} style={[styles.art, { opacity: theme.isDark && !isSupported ? 0.55 : 1 }]} />
         <View style={styles.itemInfo}>
           {/* <View style={styles.listItemTitle}> */}
-          <Text color={active ? theme['c-primary-font'] : theme['c-font']} numberOfLines={1} size={17}>{item.name}</Text>
+          <Text color={active ? colors.accent : colors.text} numberOfLines={1} size={17}>{item.name}</Text>
           {/* </View> */}
           <View style={styles.listItemSingle}>
-            <Text style={styles.listItemSingleText} size={13} color={active ? theme['c-primary-alpha-200'] : theme['c-font-label']} numberOfLines={1}>
+            <Text style={styles.listItemSingleText} size={13} color={theme.isDark ? colors.secondary : active ? theme['c-primary-alpha-200'] : theme['c-font-label']} numberOfLines={1}>
               {singer}
             </Text>
           </View>
         </View>
         {
           isShowInterval ? (
-            <Text size={12} color={active ? theme['c-primary-alpha-400'] : theme['c-250']} numberOfLines={1}>{item.interval}</Text>
+            <Text size={12} color={colors.secondary} numberOfLines={1}>{item.interval}</Text>
           ) : null
         }
       </TouchableOpacity>
@@ -72,7 +74,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
         <Text size={26} color={theme['c-primary']}>+</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} accessibilityRole="button" accessibilityLabel={labels('library_more')} style={styles.moreButton}>
-        <Icon name="dots-vertical" style={{ color: theme['c-font-label'], transform: [{ rotate: '90deg' }] }} size={16} />
+        <Icon name="dots-vertical" style={{ color: colors.secondary, transform: [{ rotate: '90deg' }] }} size={16} />
       </TouchableOpacity>
       {/* </View> */}
     </View>

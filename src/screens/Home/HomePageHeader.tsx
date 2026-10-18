@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native'
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { design } from '@/theme/design'
-import { HOME_TABS, type HomeTabId } from './navigationModel'
+import { HOME_TABS, type HomeTabId } from '@/config/homeTabs'
 import SearchTypeSelector from './Views/Search/SearchTypeSelector'
 
 export default ({ id }: { id: HomeTabId }) => {
