@@ -43,8 +43,8 @@ jobs:
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
 
       - name: Validate application
-        # v1.10.15 is an explicitly requested unvalidated release.
-        if: env.RELEASE_TAG != 'v1.10.15'
+        # v1.10.16 is an explicitly requested unvalidated release.
+        if: env.RELEASE_TAG != 'v1.10.16'
         run: |
           npm test
           npx tsc --noEmit

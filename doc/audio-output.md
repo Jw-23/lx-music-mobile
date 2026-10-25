@@ -12,4 +12,4 @@ Android 手机、TV 与手机控制网页共用 `player.volume`（0–1）和 `p
 
 `android/audio.gradle` 在构建目录生成播放器 Java 源码并接入受版本控制的音频处理器，不修改 node_modules。上游 Media3 版本为 1.8.0。
 
-v1.10.15 按用户要求跳过单元测试、类型检查、lint 和实机验证，仅由 Actions 编译与发布；后续版本恢复原验证步骤。
+v1.10.16 按用户要求跳过单元测试、类型检查、lint 和实机验证，仅由 Actions 编译与发布；后续版本恢复原验证步骤。
