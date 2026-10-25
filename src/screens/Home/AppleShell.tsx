@@ -10,6 +10,7 @@ import Text from '@/components/common/Text'
 import StatusBar from '@/components/common/StatusBar'
 import PlayerBar from '@/components/player/PlayerBar'
 import Main from './Vertical/Main'
+import LanRemoteButton from '@/components/LanRemotePanel'
 import useTVMode from '@/utils/hooks/useTVMode'
 import { HOME_TABS as tabs } from '@/config/homeTabs'
 
@@ -38,6 +39,7 @@ export default () => {
           <Text size={wide ? 17 : 10} color={selected ? colors.accent : colors.secondary} style={wide ? styles.sidebarLabel : styles.tabLabel}>{t(tab.title)}</Text>
         </Pressable>
       })}
+      {tv ? <LanRemoteButton /> : null}
     </>
   )
   const navigation = wide

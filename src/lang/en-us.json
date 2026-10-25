@@ -603,5 +603,12 @@
   "library_lyric_seek_hint": "Seek to this lyric line",
   "library_collecting": "Saving…",
   "library_collected": "Saved",
-  "library_collect_failed": "Could not save the playlist. Check your connection or try again later."
+  "library_collect_failed": "Could not save the playlist. Check your connection or try again later.",
+  "lan_title": "Phone control",
+  "lan_enable": "Enable local network control",
+  "lan_hint": "Connect your phone and TV to the same network. Open the address below and enter the pairing code to change settings, import sources, search and play music. The service stops when the app exits.",
+  "lan_pair_code": "Pairing code",
+  "lan_rotate": "Change code and disconnect paired phones",
+  "lan_no_network": "Connect to your local network to see an address",
+  "lan_failed": "Operation failed. Please try again."
 }

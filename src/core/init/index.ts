@@ -5,6 +5,7 @@ import initI18n from './i18n'
 import initUserApi from './userApi'
 import initPlayer from './player'
 import initTVRemote from './tvRemote'
+import initLanRemote from './lanRemote'
 import dataInit from './dataInit'
 import initSync from './sync'
 import initCommonState from './common'
@@ -61,6 +62,7 @@ export default async() => {
   bootLog('Data inited.')
   await initCommonState(setting)
   bootLog('Common State inited.')
+  await initLanRemote()
 
   void initSync(setting)
   bootLog('Sync inited.')

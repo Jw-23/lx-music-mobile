@@ -603,5 +603,12 @@
   "library_lyric_seek_hint": "跳轉到這句歌詞對應的播放進度",
   "library_collecting": "正在收藏…",
   "library_collected": "已收藏",
-  "library_collect_failed": "收藏失敗，請檢查網路或稍後重試"
+  "library_collect_failed": "收藏失敗，請檢查網路或稍後重試",
+  "lan_title": "手機控制",
+  "lan_enable": "啟用區域網路控制",
+  "lan_hint": "手機與電視連接同一網路，在手機瀏覽器開啟下方網址，輸入配對碼即可修改設定、匯入音源、搜尋和點播。應用程式退出後服務關閉。",
+  "lan_pair_code": "配對碼",
+  "lan_rotate": "更換配對碼並中斷已配對手機",
+  "lan_no_network": "請先連接區域網路，再查看網址",
+  "lan_failed": "操作失敗，請重試"
 }

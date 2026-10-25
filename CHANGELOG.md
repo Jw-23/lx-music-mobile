@@ -6,6 +6,15 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.13](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.12...v1.10.13) - 2026-10-25
+
+### 手机局域网控制
+
+- 内置手机控制网页，提供六位配对码、连接撤销和电视侧栏入口；常用设置、音源导入与启用、搜索和电视点播可通过手机完成。
+- 网页支持深浅色与减少动态效果；服务具有认证、局域网与来源校验、请求限制和超时控制。
+- 搜索独立于电视页面并转换为统一歌曲格式，点播复用现有资料库与播放器入口。
+- 140 项单元测试、类型检查、lint、差异格式检查和 Android Java 编译通过。操作说明见 [局域网手机控制](doc/lan-control.md)。
+
 ## [1.10.12](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.11...v1.10.12) - 2026-10-25
 
 ### Android TV

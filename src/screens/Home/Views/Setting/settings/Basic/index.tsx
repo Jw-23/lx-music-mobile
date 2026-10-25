@@ -2,6 +2,7 @@ import { memo } from 'react'
 
 import Theme from '../Theme'
 import TVMode from './TVMode'
+import LanRemoteButton from '@/components/LanRemotePanel'
 import Section from '../../components/Section'
 import Source from './Source'
 import SourceName from './SourceName'
@@ -25,6 +26,7 @@ export default memo(() => {
   return (
     <Section title={t('setting_basic')}>
       <TVMode />
+      <LanRemoteButton />
       <IsStartupAutoPlay />
       <IsStartupPushPlayDetailScreen />
       <IsShowBackBtn />
