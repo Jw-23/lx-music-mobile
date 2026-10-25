@@ -15,8 +15,10 @@ playerProject.afterEvaluate {
             }
         }
     }
-    // A task-backed source directory also wires its producer into every Java compile.
+    // AGP resolves source directories eagerly; wire the producer explicitly.
     playerProject.extensions.getByName('android').sourceSets.main.java.setSrcDirs([
-        prepareAudio, rootProject.file('audio/src/main/java')
+        generatedJava, rootProject.file('audio/src/main/java')
     ])
+    playerProject.tasks.named('preBuild').configure { dependsOn(prepareAudio) }
+    playerProject.tasks.withType(JavaCompile).configureEach { dependsOn(prepareAudio) }
 }

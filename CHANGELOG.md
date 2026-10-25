@@ -6,7 +6,7 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [1.10.16](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.14...v1.10.16) - 2026-10-25
+## [1.10.17](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.14...v1.10.17) - 2026-10-25
 
 ### 声音与响度
 
