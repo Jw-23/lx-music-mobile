@@ -53,7 +53,10 @@ public class UtilsModule extends ReactContextBaseJavaModule {
 
   @Override
   public java.util.Map<String, Object> getConstants() {
-    return java.util.Collections.<String, Object>singletonMap("isTV", cn.toside.music.mobile.tv.TvRemote.isDeviceTV(reactContext));
+    java.util.Map<String, Object> constants = new java.util.HashMap<>();
+    constants.put("isTV", cn.toside.music.mobile.tv.TvRemote.isDeviceTV(reactContext));
+    constants.put("isTVBuild", cn.toside.music.mobile.BuildConfig.IS_TV_BUILD);
+    return constants;
   }
 
   @ReactMethod

@@ -11,6 +11,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
  * By default you don't need to apply any configuration, just uncomment the lines you need.
  */
 react {
+    debuggableVariants = ["mobileDebug", "tvDebug"]
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '..'
     // root = file("../")
@@ -117,6 +118,18 @@ android {
         versionName verName
     }
 
+    flavorDimensions "device"
+    productFlavors {
+        mobile {
+            dimension "device"
+            buildConfigField "boolean", "IS_TV_BUILD", "false"
+        }
+        tv {
+            dimension "device"
+            buildConfigField "boolean", "IS_TV_BUILD", "true"
+        }
+    }
+
     splits {
         abi {
             reset()
@@ -175,14 +188,15 @@ android {
             // Example: versionCode 1 will generate 1001 for armeabi-v7a, 1002 for x86, etc.
             def versionCodes = ["armeabi-v7a": 1, "x86": 2, "arm64-v8a": 3, "x86_64": 4]
             def abi = output.getFilter(OutputFile.ABI)
+            def outputName = variant.flavorName == "tv" ? "lx-music-tv" : applicationName
             if (abi == null) {  // null for the universal-debug, universal-release variants
                 output.outputFileName =
-                        "${applicationName}-v${defaultConfig.versionName}-universal.apk"
+                        "${outputName}-v${defaultConfig.versionName}-universal.apk"
             } else {
                 output.versionCodeOverride =
                         defaultConfig.versionCode * 1000 + versionCodes.get(abi)
                 output.outputFileName =
-                        "${applicationName}-v${defaultConfig.versionName}-${abi}.apk"
+                        "${outputName}-v${defaultConfig.versionName}-${abi}.apk"
             }
 
         }

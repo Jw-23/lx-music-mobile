@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { NativeModules, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
+import { NativeModules, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native'
 import Text from '@/components/common/Text'
 import CheckBox from '@/components/common/CheckBox'
 import Button from '@/components/common/Button'
@@ -43,14 +43,14 @@ export const LanRemotePanel = () => {
     {state.error ? <Text color={colors.destructive} accessibilityRole="alert">{state.error}</Text> : null}
   </ScrollView>
 }
-export default () => {
+export default ({ compact = false }: { compact?: boolean }) => {
   const modal = useRef<DialogType>(null)
   const t = useI18n()
   const colors = useDesignColors()
   if (Platform.OS !== 'android' || !native) return null
   return <>
-    <Pressable onPress={() => modal.current?.setVisible(true)} accessibilityRole="button" style={styles.entry}><Text color={colors.accent} size={17}>{t('lan_title')}</Text></Pressable>
+    <Pressable onPress={() => modal.current?.setVisible(true)} accessibilityRole="button" accessibilityLabel={t('lan_title')} style={compact ? styles.compact : styles.entry}>{compact ? <View style={[styles.phone, { borderColor: colors.text }]}><View style={[styles.phoneLine, { backgroundColor: colors.text }]} /></View> : <Text color={colors.accent} size={17}>{t('lan_title')}</Text>}</Pressable>
     <Dialog ref={modal} title={t('lan_title')}><LanRemotePanel /></Dialog>
   </>
 }
-const styles = StyleSheet.create({ panel: { paddingHorizontal: 20, paddingBottom: 20, gap: 10 }, description: { lineHeight: 23 }, address: { lineHeight: 28 }, pin: { fontWeight: '600', letterSpacing: 7 }, rotate: { minHeight: 44, justifyContent: 'center' }, entry: { minHeight: 52, justifyContent: 'center', paddingHorizontal: 8 } })
+const styles = StyleSheet.create({ compact: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: '#252831' }, phone: { width: 16, height: 24, borderRadius: 4, borderWidth: 1.8, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 3 }, phoneLine: { width: 5, height: 1.5, borderRadius: 1 }, panel: { paddingHorizontal: 20, paddingBottom: 20, gap: 10 }, description: { lineHeight: 23 }, address: { lineHeight: 28 }, pin: { fontWeight: '600', letterSpacing: 7 }, rotate: { minHeight: 44, justifyContent: 'center' }, entry: { minHeight: 52, justifyContent: 'center', paddingHorizontal: 8 } })

@@ -115,7 +115,7 @@ function home(initial = 'nav_love', tv = false) {
   const settings = { 'common.homePageScroll': true }; const lx = { homePagerIdle: true }
   const setNavActiveId = id => { if (state.navActiveId !== id) { state.navActiveId = id; event.emit('navActiveIdUpdated', id) } }
   const h = harness('src/screens/Home/Vertical/Main.tsx', {
-    '../Views/Search': { default: 'Search' }, '../Views/SongList': { default: 'SongList' }, '../Views/Mylist': { default: 'Mylist' }, '../Views/Leaderboard': { default: 'Leaderboard' }, '../Views/Setting': { default: 'Setting' },
+    '../Views/Search': { default: 'Search' }, '../Views/SongList': { default: 'SongList' }, '../Views/Mylist': { default: 'Mylist' }, '../Views/Leaderboard': { default: 'Leaderboard' }, '../Views/Setting': { default: 'Setting' }, '../../TV/Settings': { default: 'TVSettings' },
     '@/store/common/state': { default: state }, '@/store/setting/state': { default: { setting: settings } },
     '@/utils/tools': { createStyle: value => value }, 'react-native-pager-view': { default: 'Pager' }, '@/core/common': { setNavActiveId }, '@/store/common/hook': { useNavActiveId: () => state.navActiveId }, '@/utils/hooks/useTVMode': { default: () => tv }, '@/components/common/PageTransition': { default: 'PageTransition' },
   }, { global: { state_event: event, lx } })
@@ -334,4 +334,19 @@ test('TV modals autofocus their content, skip the full-screen backdrop and block
     assert.equal(scope().props.blocked, true); assert.equal(h.tree().props.visible, true)
     h.cleanup()
   }
+})
+test('the TV shell uses three primary destinations and keeps phone control and settings as compact actions', () => {
+  let active = 'nav_love'
+  const h = harness('src/screens/TV/Shell.tsx', {
+    '@/store/common/hook': { useNavActiveId: () => active }, '@/core/common': { setNavActiveId: id => { active = id } }, '@/lang': { useI18n: () => key => key },
+    '@/components/common/Text': { default: 'Text' }, '@/components/common/StatusBar': { default: 'StatusBar' }, '../Home/Vertical/Main': { default: 'Main' }, '@/theme/tv': { TV_COLORS: {} },
+    '@/navigation': {}, '@/store/common/state': { default: { componentIds: {} } }, './Button': { default: 'TVButton' }, './Transport': { default: 'Transport' },
+  }, { global: { app_event: new EventEmitter() } })
+  h.render()
+  let tabs = nodes(h.tree()).filter(node => node.props?.accessibilityRole === 'tab')
+  assert.equal(tabs.length, 3); assert.equal(nodes(h.tree()).find(node => node.type === 'LanRemoteButton').props.compact, true)
+  tabs[1].props.onPress(); h.render(); assert.equal(active, 'nav_songlist')
+  tabs = nodes(h.tree()).filter(node => node.props?.accessibilityRole === 'tab'); assert.equal(tabs.length, 5)
+  assert.equal(nodes(h.tree()).filter(node => node.type === 'Transport').length, 1)
+  h.cleanup()
 })

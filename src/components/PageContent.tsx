@@ -24,6 +24,7 @@ export default ({ children, tvInsets = true }: Props) => {
   useEffect(() => { NativeModules.UtilsModule?.setTVMode?.(tv) }, [tv])
   const windowSize = useWindowSize()
   const pic = useBgPic()
+  const content = useMemo(() => <View style={{ flex: 1, paddingHorizontal: tv && tvInsets ? 28 : 0, paddingVertical: tv && tvInsets ? 18 : 0 }}>{children}</View>, [children, tv, tvInsets])
   // const [wh, setWH] = useState<{ width: number | string, height: number | string }>({ width: '100%', height: Dimensions.get('screen').height })
 
   // 固定宽高度 防止弹窗键盘时大小改变导致背景被缩放
@@ -53,10 +54,10 @@ export default ({ children, tvInsets = true }: Props) => {
       >
       </ImageBackground>
       <View style={{ flex: 1, flexDirection: 'column', backgroundColor: theme['c-main-background'] }}>
-        {children}
+        {content}
       </View>
     </View>
-  ), [children, theme, windowSize.height, windowSize.width])
+  ), [content, theme, windowSize.height, windowSize.width])
   const picComponent = useMemo(() => {
     return (
       <View style={{ flex: 1, overflow: 'hidden' }}>
@@ -69,16 +70,16 @@ export default ({ children, tvInsets = true }: Props) => {
           <View style={{ flex: 1, flexDirection: 'column', backgroundColor: theme['c-content-background'], opacity: 0.76 }}></View>
         </ImageBackground>
         <View style={{ flex: 1, flexDirection: 'column' }}>
-          {children}
+          {content}
         </View>
       </View>
     )
-  }, [children, pic, theme, windowSize.height, windowSize.width])
+  }, [content, pic, theme, windowSize.height, windowSize.width])
 
   return (
     <>
       <SizeView />
-      <TVFocusScope style={{ flex: 1, paddingHorizontal: tv && tvInsets ? 32 : 0, paddingVertical: tv && tvInsets ? 20 : 0 }}>{pic ? picComponent : themeComponent}</TVFocusScope>
+      <TVFocusScope style={{ flex: 1, backgroundColor: theme['c-main-background'] }}>{pic && !tv ? picComponent : themeComponent}</TVFocusScope>
     </>
   )
 }

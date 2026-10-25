@@ -76,9 +76,9 @@ public final class TvFocusOutline extends Drawable implements ViewTreeObserver.O
     if (rect.isEmpty()) return;
     RectF box = new RectF(rect);
     paint.setStyle(Paint.Style.STROKE);
-    paint.setColor(Color.BLACK); paint.setStrokeWidth(6 * density);
+    paint.setColor(Color.argb(40, 180, 195, 255)); paint.setStrokeWidth(7 * density);
     canvas.drawRoundRect(box, 10 * density, 10 * density, paint);
-    paint.setColor(editing ? Color.rgb(255, 159, 10) : Color.WHITE); paint.setStrokeWidth(3 * density);
+    paint.setColor(editing ? Color.rgb(255, 159, 10) : Color.WHITE); paint.setStrokeWidth(2 * density);
     canvas.drawRoundRect(box, 10 * density, 10 * density, paint);
   }
   @Override public void setAlpha(int alpha) { paint.setAlpha(alpha); }

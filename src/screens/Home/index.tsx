@@ -3,6 +3,8 @@ import PageContent from '@/components/PageContent'
 import { setComponentId } from '@/core/common'
 import { COMPONENT_IDS } from '@/config/constant'
 import AppleShell from './AppleShell'
+import TVShell from '../TV/Shell'
+import useTVMode from '@/utils/hooks/useTVMode'
 import { navigations } from '@/navigation'
 import settingState from '@/store/setting/state'
 
@@ -13,6 +15,7 @@ interface Props {
 
 
 export default ({ componentId }: Props) => {
+  const tv = useTVMode()
   useEffect(() => {
     setComponentId(COMPONENT_IDS.home, componentId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -25,7 +28,7 @@ export default ({ componentId }: Props) => {
 
   return (
     <PageContent>
-      <AppleShell />
+      {tv ? <TVShell /> : <AppleShell />}
     </PageContent>
   )
 }

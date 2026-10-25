@@ -22,7 +22,7 @@ public final class TvRemote {
   private TvRemote() {}
   public static boolean isDeviceTV(Context context) {
     UiModeManager mode = (UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE);
-    return (mode != null && mode.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION)
+    return cn.toside.music.mobile.BuildConfig.IS_TV_BUILD || (mode != null && mode.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION)
         || context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK);
   }
   public static boolean isEnabled(Context context) { return override != null ? override : isDeviceTV(context); }

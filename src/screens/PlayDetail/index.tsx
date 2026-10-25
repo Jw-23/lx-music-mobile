@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 // import { View, StyleSheet } from 'react-native'
 import { useHorizontalMode } from '@/utils/hooks'
 
+import TVPlayer from '../TV/Player'
+import useTVMode from '@/utils/hooks/useTVMode'
 import Vertical from './Vertical'
 import Horizontal from './Horizontal'
 import PageContent from '@/components/PageContent'
@@ -10,6 +12,7 @@ import { setComponentId } from '@/core/common'
 import { COMPONENT_IDS } from '@/config/constant'
 
 export default ({ componentId }: { componentId: string }) => {
+  const tv = useTVMode()
   const isHorizontalMode = useHorizontalMode()
 
   useEffect(() => {
@@ -21,7 +24,7 @@ export default ({ componentId }: { componentId: string }) => {
     <PageContent>
       <StatusBar />
       {
-        isHorizontalMode
+        tv ? <TVPlayer componentId={componentId} /> : isHorizontalMode
           ? <Horizontal componentId={componentId} />
           : <Vertical componentId={componentId} />
       }

@@ -76,17 +76,25 @@ jobs:
           cd android
           trap 'rm -f "app/$SIGNING_FILE"' EXIT
           printf '%s' "$SIGNING_FILE_BASE64" | base64 --decode > "app/$SIGNING_FILE"
-          ./gradlew assembleRelease --no-daemon \
+          ./gradlew assembleMobileRelease assembleTvRelease --no-daemon \
             -PMYAPP_UPLOAD_STORE_FILE="$SIGNING_FILE" \
             -PMYAPP_UPLOAD_KEY_ALIAS="$SIGNING_ALIAS" \
             -PMYAPP_UPLOAD_STORE_PASSWORD="$SIGNING_PASSWORD" \
             -PMYAPP_UPLOAD_KEY_PASSWORD="$SIGNING_KEY_PASSWORD"
 
+      - name: Collect phone and TV packages
+        shell: bash
+        run: |
+          mkdir -p release-apks
+          find android/app/build/outputs/apk -type f -name '*.apk' -path '*/release/*' -exec cp {} release-apks/ \;
+          test -f "release-apks/lx-music-mobile-v$PACKAGE_VERSION-universal.apk"
+          test -f "release-apks/lx-music-tv-v$PACKAGE_VERSION-universal.apk"
+
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: android-v${{ env.PACKAGE_VERSION }}
-          path: android/app/build/outputs/apk/release/*.apk
+          path: release-apks/*.apk
           if-no-files-found: error
 
   Release:

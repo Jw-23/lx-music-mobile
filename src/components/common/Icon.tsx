@@ -1,6 +1,7 @@
 import { createIconSetFromIcoMoon } from 'react-native-vector-icons'
 import icoMoonConfig from '@/resources/fonts/selection.json'
 import { scaleSizeW } from '@/utils/pixelRatio'
+import { getTVIconSize } from '@/theme/tv'
 import { memo, type ComponentProps } from 'react'
 import { useTextShadow, useTheme } from '@/store/theme/hook'
 import { StyleSheet, type StyleProp, type TextStyle } from 'react-native'
@@ -43,11 +44,12 @@ export const Icon = memo(({ size = 15, rawSize, color, style, ...props }: IconPr
   }, style) : style
   return (
     <IcoMoon
-      size={rawSize ?? scaleSizeW(size)}
+      size={getTVIconSize(size, rawSize, theme.id === 'tv', scaleSizeW(size))}
       color={color ?? theme['c-font']}
       // @ts-expect-error
-      style={newStyle}
+      style={theme.id === 'tv' ? [{ includeFontPadding: false, textAlignVertical: 'center' }, newStyle] : newStyle}
       {...props}
+      allowFontScaling={theme.id === 'tv' ? false : props.allowFontScaling}
     />
   )
 })

@@ -1,5 +1,7 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect, useState, useMemo } from 'react'
 
+import useTVMode from '@/utils/hooks/useTVMode'
+import { getTVTheme } from '@/theme/tv'
 import QuickAddProvider from '@/components/QuickAddProvider'
 import themeState, { ThemeContext } from '../theme/state'
 
@@ -7,6 +9,7 @@ import themeState, { ThemeContext } from '../theme/state'
 export default memo(({ children }: {
   children: React.ReactNode
 }) => {
+  const tv = useTVMode()
   const [theme, setTheme] = useState(themeState.theme)
 
   useEffect(() => {
@@ -21,8 +24,9 @@ export default memo(({ children }: {
     }
   }, [])
 
+  const activeTheme = useMemo(() => tv ? getTVTheme(theme) : theme, [tv, theme])
   return (
-    <ThemeContext.Provider value={theme}>
+    <ThemeContext.Provider value={activeTheme}>
       <QuickAddProvider>{children}</QuickAddProvider>
     </ThemeContext.Provider>
   )

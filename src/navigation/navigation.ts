@@ -1,3 +1,5 @@
+import { isTVDevice } from '@/utils/hooks/useTVMode'
+import { TV_COLORS } from '@/theme/tv'
 import { Navigation } from 'react-native-navigation'
 // import { InteractionManager } from 'react-native'
 
@@ -67,16 +69,16 @@ export async function pushHomeScreen() {
               },
               statusBar: {
                 drawBehind: true,
-                visible: true,
+                visible: !isTVDevice,
                 style: getStatusBarStyle(theme.isDark),
                 backgroundColor: 'transparent',
               },
               navigationBar: {
-                // visible: false,
-                backgroundColor: theme['c-content-background'],
+                visible: isTVDevice ? false : undefined,
+                backgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
               },
               layout: {
-                componentBackgroundColor: theme['c-content-background'],
+                componentBackgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
               },
             },
           },
@@ -132,16 +134,16 @@ export function pushPlayDetailScreen(componentId: string, skipAnimation = false)
           },
           statusBar: {
             drawBehind: true,
-            visible: true,
+            visible: !isTVDevice,
             style: getStatusBarStyle(theme.isDark),
             backgroundColor: 'transparent',
           },
           navigationBar: {
-            // visible: false,
-            backgroundColor: theme['c-content-background'],
+            visible: isTVDevice ? false : undefined,
+            backgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
           },
           layout: {
-            componentBackgroundColor: theme['c-content-background'],
+            componentBackgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
           },
           animations: {
             push: skipAnimation ? {} : {
@@ -217,16 +219,16 @@ export function pushSonglistDetailScreen(componentId: string, info: ListInfoItem
           },
           statusBar: {
             drawBehind: true,
-            visible: true,
+            visible: !isTVDevice,
             style: getStatusBarStyle(theme.isDark),
             backgroundColor: 'transparent',
           },
           navigationBar: {
-            // visible: false,
-            backgroundColor: theme['c-content-background'],
+            visible: isTVDevice ? false : undefined,
+            backgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
           },
           layout: {
-            componentBackgroundColor: theme['c-content-background'],
+            componentBackgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
           },
           animations: {
             push: {
@@ -350,16 +352,16 @@ export function pushCommentScreen(componentId: string) {
           },
           statusBar: {
             drawBehind: true,
-            visible: true,
+            visible: !isTVDevice,
             style: getStatusBarStyle(theme.isDark),
             backgroundColor: 'transparent',
           },
           navigationBar: {
-            // visible: false,
-            backgroundColor: theme['c-content-background'],
+            visible: isTVDevice ? false : undefined,
+            backgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
           },
           layout: {
-            componentBackgroundColor: theme['c-content-background'],
+            componentBackgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
           },
           animations: {
             push: {
@@ -433,16 +435,16 @@ export function pushCommentScreen(componentId: string) {
 //           },
 //           statusBar: {
 //             drawBehind: true,
-//             visible: true,
+//             visible: !isTVDevice,
 //             style: getStatusBarStyle(theme.isDark),
 //             backgroundColor: 'transparent',
 //           },
 //           navigationBar: {
-//             // visible: false,
-//             backgroundColor: theme['c-content-background'],
+//             visible: isTVDevice ? false : undefined,
+//             backgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
 //           },
 //           layout: {
-//             componentBackgroundColor: theme['c-content-background'],
+//             componentBackgroundColor: isTVDevice ? TV_COLORS.background : theme['c-content-background'],
 //           },
 //           animations: {
 //             push: {

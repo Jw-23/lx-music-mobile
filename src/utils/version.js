@@ -1,3 +1,4 @@
+import { isTVBuild } from '@/config/build'
 import { httpGet } from '@/utils/request'
 import { RELEASE_API_URL } from '@/config/release'
 import { parseRelease, selectReleaseAsset } from './releaseModel'
@@ -41,7 +42,7 @@ export const downloadNewVersion = async(version, onDownload = noop) => {
     ? checkedRelease
     : await request(`${RELEASE_API_URL}/tags/v${version}`)
   if (parseRelease(release).version !== version) throw new Error('Release version mismatch')
-  const url = selectReleaseAsset(release, await getSupportedAbis())
+  const url = selectReleaseAsset(release, await getSupportedAbis(), isTVBuild ? 'tv' : 'mobile')
   let savePath = temporaryDirectoryPath + '/lx-music-mobile.apk'
 
   if (downloadJobId) stopDownload(downloadJobId)

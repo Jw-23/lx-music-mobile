@@ -6,9 +6,9 @@ export const parseRelease = release => {
   return { version: match[1], desc: (release.body ?? '').replace(/^#{1,6}\s+/gm, ''), history: [] }
 }
 
-export const selectReleaseAsset = (release, supportedAbis) => {
+export const selectReleaseAsset = (release, supportedAbis, variant = 'mobile') => {
   parseRelease(release)
-  const prefix = `lx-music-mobile-${release.tag_name}-`
+  const prefix = `lx-music-${variant === 'tv' ? 'tv' : 'mobile'}-${release.tag_name}-`
   for (const abi of [...supportedAbis, 'universal']) {
     const asset = release.assets?.find(asset => asset.name === `${prefix}${abi}.apk` && asset.state === 'uploaded' && asset.size > 0)
     if (asset?.browser_download_url?.startsWith(`${RELEASE_URL}/download/${release.tag_name}/`)) return asset.browser_download_url

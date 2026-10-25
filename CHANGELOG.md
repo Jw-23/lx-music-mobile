@@ -6,6 +6,16 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.14](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.13...v1.10.14) - 2026-10-25
+
+### 独立 TV 版
+
+- 独立 TV 安装包、顶部简化导航、六宫格设置和封面/歌词并排的专用播放页。
+- 修复安全边距外侧白边，页面背景与系统窗口全屏深色；图标、文字与控件不再按手机规则缩放。
+- TV 外观与手机主题分离，覆盖更新沿用应用标识、签名与已有数据；自动更新选择对应版本安装包。
+- 保留手机局域网控制、音源导入与搜索点播。
+- 148 项测试、类型检查、lint、差异检查及手机/TV 原生 Java 编译通过；两类签名包通过同一发布工作流产出。
+
 ## [1.10.13](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.12...v1.10.13) - 2026-10-25
 
 ### 手机局域网控制

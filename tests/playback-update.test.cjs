@@ -50,7 +50,7 @@ function updateService({ latest = release(), history = [], failLatest = false, f
   const downloads = []
   const installs = []
   const service = load('src/utils/version.js', {
-    '@/config/release': repository, './releaseModel': releases,
+    '@/config/build': { isTVBuild: false }, '@/config/release': repository, './releaseModel': releases,
     '@/utils/request': { httpGet: (url, _options, done) => {
       urls.push(url)
       const isLatest = url.endsWith('/latest')

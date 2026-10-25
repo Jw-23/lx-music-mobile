@@ -1,10 +1,10 @@
 {
   "name": "lx-music-mobile",
-  "version": "1.10.13",
-  "versionCode": 92,
+  "version": "1.10.14",
+  "versionCode": 93,
   "private": true,
   "scripts": {
-    "dev": "react-native run-android --active-arch-only",
+    "dev": "react-native run-android --mode mobileDebug --active-arch-only",
     "ios": "react-native run-ios",
     "start": "react-native start",
     "sc": "react-native start --reset-cache",
@@ -15,14 +15,15 @@
     "menu": "adb shell input keyevent 82",
     "bundle-android": "react-native bundle --platform android --dev true --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res",
     "build-test": "react-native bundle --platform android --dev true --entry-file index.js --bundle-output index.android.bundle --assets-dest res",
-    "pack:android:debug": "./gradlew assembleDebug",
+    "pack:android:debug": "./gradlew assembleMobileDebug",
     "pack": "npm run pack:android",
     "pack:android": "cd android && gradlew.bat assembleRelease",
     "clear": "cd android && gradlew.bat clean",
     "clear:full": "git clean -fdx -e android/keystore.properties -e android/app/*.keystore",
     "build:theme": "node src/theme/themes/createThemes.js",
     "publish": "node publish",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "dev:tv": "react-native run-android --mode tvDebug --active-arch-only"
   },
   "engines": {
     "node": ">= 18",

@@ -22,7 +22,7 @@ export interface TextProps extends _TextProps {
 //     const theme = useTheme()
 //     return (
 //       <Component
-//         style={StyleSheet.compose({ fontFamily: 'System', fontSize: setSpText(size), color: color ?? theme['c-font'] }, style)}
+//         style={StyleSheet.compose({ fontFamily: 'System', fontSize: theme.id === 'tv' ? size : setSpText(size), color: color ?? theme['c-font'] }, style)}
 //         {...props}
 //       >{children}</Component>
 //     )
@@ -37,11 +37,11 @@ export default memo(({ style, size = 15, color, children, ...props }: TextProps)
     textShadowColor: theme['c-primary-dark-300-alpha-800'],
     textShadowOffset: { width: 0.2, height: 0.2 },
     textShadowRadius: 2,
-    fontSize: setSpText(size),
+    fontSize: theme.id === 'tv' ? size : setSpText(size),
     color: color ?? theme['c-font'],
   } : {
     // fontFamily: 'System',
-    fontSize: setSpText(size),
+    fontSize: theme.id === 'tv' ? size : setSpText(size),
     color: color ?? theme['c-font'],
   }, style)
 
@@ -49,6 +49,7 @@ export default memo(({ style, size = 15, color, children, ...props }: TextProps)
     <Text
       style={style}
       {...props}
+      allowFontScaling={theme.id === 'tv' ? false : props.allowFontScaling}
     >{children}</Text>
   )
 })
@@ -71,15 +72,15 @@ export const AnimatedText = ({ style, size = 15, color, children, ...props }: An
     textShadowColor: theme['c-primary-dark-300-alpha-800'],
     textShadowOffset: { width: 0.2, height: 0.2 },
     textShadowRadius: 2,
-    fontSize: setSpText(size),
+    fontSize: theme.id === 'tv' ? size : setSpText(size),
     color: color ?? theme['c-font'],
   } : {
     // fontFamily: 'System',
-    fontSize: setSpText(size),
+    fontSize: theme.id === 'tv' ? size : setSpText(size),
     color: color ?? theme['c-font'],
   }, style as TextStyle)
 
-  return <Animated.Text style={style} {...props}>{children}</Animated.Text>
+  return <Animated.Text style={style} {...props} allowFontScaling={theme.id === 'tv' ? false : props.allowFontScaling}>{children}</Animated.Text>
 }
 
 
@@ -110,15 +111,15 @@ export const AnimatedColorText = ({ style, size = 15, opacity: _opacity, color: 
     textShadowColor: theme['c-primary-dark-300-alpha-800'],
     textShadowOffset: { width: 0.2, height: 0.2 },
     textShadowRadius: 2,
-    fontSize: setSpText(size),
+    fontSize: theme.id === 'tv' ? size : setSpText(size),
     color: color as unknown as ColorValue,
     opacity,
   } : {
     // fontFamily: 'System',
-    fontSize: setSpText(size),
+    fontSize: theme.id === 'tv' ? size : setSpText(size),
     color: color as unknown as ColorValue,
     opacity,
   }, style as TextStyle)
 
-  return <Animated.Text style={style} {...props}>{children}</Animated.Text>
+  return <Animated.Text style={style} {...props} allowFontScaling={theme.id === 'tv' ? false : props.allowFontScaling}>{children}</Animated.Text>
 }

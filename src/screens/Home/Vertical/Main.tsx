@@ -6,6 +6,7 @@ import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
 import Leaderboard from '../Views/Leaderboard'
 import Setting from '../Views/Setting'
+import TVSettings from '../../TV/Settings'
 import commonState from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
 import { setNavActiveId } from '@/core/common'
@@ -122,7 +123,7 @@ const TVMain = () => {
   visited.current.add(active)
   return <PageTransition transitionKey={active} direction={1}>
     {HOME_PAGE_IDS.filter(id => visited.current.has(id)).map(id => {
-      const Screen = screens[id]
+      const Screen = id === 'nav_setting' ? TVSettings : screens[id]
       return <TVFocusScope key={id} blocked={id !== active} style={[styles.page, id !== active && { display: 'none' }]}>
         <HomePageHeader id={id} /><Screen />
       </TVFocusScope>

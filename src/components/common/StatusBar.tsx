@@ -4,7 +4,7 @@ import { StatusBar as RNStatusBar } from 'react-native'
 const StatusBar = function() {
   const theme = useTheme()
   const statusBarStyle = theme.isDark ? 'light-content' : 'dark-content'
-  return <RNStatusBar backgroundColor="rgba(0,0,0,0)" barStyle={statusBarStyle} translucent={true} />
+  return <RNStatusBar hidden={theme.id === 'tv' ? true : undefined} backgroundColor="rgba(0,0,0,0)" barStyle={statusBarStyle} translucent={true} />
 }
 
 StatusBar.currentHeight = RNStatusBar.currentHeight ?? 0
