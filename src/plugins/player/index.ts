@@ -16,7 +16,7 @@ import { updateOptions, setVolume, setPlaybackRate, migratePlayerCache } from '.
 //   })
 // }
 
-const initial = async({ volume, playRate, cacheSize, isHandleAudioFocus, isEnableAudioOffload }: {
+const initial = async({ volume, playRate, cacheSize, isHandleAudioFocus }: {
   volume: number
   playRate: number
   cacheSize: number
@@ -32,7 +32,7 @@ const initial = async({ volume, playRate, cacheSize, isHandleAudioFocus, isEnabl
     maxBuffer: 1000,
     waitForBuffer: true,
     handleAudioFocus: isHandleAudioFocus,
-    audioOffload: isEnableAudioOffload,
+    audioOffload: false, // PCM output is required for live loudness normalization.
     autoUpdateMetadata: false,
   })
   global.lx.playerStatus.isInitialized = true

@@ -6,6 +6,7 @@ import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
 import Image from '@/components/common/Image'
 import QueueButton from '@/components/player/QueueButton'
+import AudioOutputButton from '@/components/player/AudioOutputButton'
 import { TV_COLORS as c } from '@/theme/tv'
 import { setNavActiveId } from '@/core/common'
 import { toast } from '@/utils/tools'
@@ -34,6 +35,7 @@ export default ({ onOpen }: { onOpen?: () => void }) => {
       <TVButton icon="nextMusic" label={t('library_next')} onPress={() => { void switchSong(false) }} disabled={!music.id} />
       {!onOpen ? <Pressable disabled={maxPlayTime <= 0} onPress={() => { step(1) }} accessibilityRole="button" accessibilityLabel={t('tv_forward')} style={styles.seek}><Text size={15} color={c.secondary}>+10</Text></Pressable> : null}
       <QueueButton />
+      <AudioOutputButton />
     </View>
     <View style={styles.progressRow}>
       {!onOpen ? <Text color={c.secondary} size={12}>{nowPlayTimeStr}</Text> : null}

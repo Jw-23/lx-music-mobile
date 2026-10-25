@@ -5,6 +5,7 @@ import MusicAddBtn from './MusicAddBtn'
 import DesktopLyricBtn from './DesktopLyricBtn'
 import CommentBtn from './CommentBtn'
 import QueueButton from '@/components/player/QueueButton'
+import AudioOutputButton from '@/components/player/AudioOutputButton'
 
 export default () => {
   return (
@@ -14,6 +15,7 @@ export default () => {
       <PlayModeBtn />
       <CommentBtn />
       <QueueButton />
+      <AudioOutputButton />
     </View>
   )
 }

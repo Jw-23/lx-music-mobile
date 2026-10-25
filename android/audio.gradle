@@ -1,0 +1,21 @@
+// Build our audio integration from owned sources without changing node_modules.
+project(':react-native-track-player') {
+    afterEvaluate {
+        def originalJava = file('src/main/java')
+        def generatedJava = layout.buildDirectory.dir('generated/lxAudio/java')
+        def prepareAudio = tasks.register('prepareLXAudio', Sync) {
+            from(originalJava)
+            into(generatedJava)
+            filesMatching('**/MusicManager.java') {
+                filter { line ->
+                    line.replace('new DefaultRenderersFactory(service)',
+                        'new com.guichaguri.trackplayer.audio.NormalizingRenderersFactory(service)')
+                        .replace('shouldEnableAudioOffload = options.getBoolean("audioOffload", true)',
+                            'shouldEnableAudioOffload = false')
+                }
+            }
+        }
+        android.sourceSets.main.java.setSrcDirs([generatedJava, rootProject.file('audio/src/main/java')])
+        tasks.named('preBuild').configure { dependsOn(prepareAudio) }
+    }
+}

@@ -6,6 +6,20 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.15](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.14...v1.10.15) - 2026-10-25
+
+### 声音与响度
+
+- Android 手机和 TV 新增默认开启的「统一响度」，通过实时信号分析、平滑增益、静音门限与声道联动的峰值保护，减少切歌时忽大忽小。
+- 播放器提供固定 0–100% 音量、静音与恢复音量；设备系统音量仍独立控制。实时均衡不承诺不同设备或所有歌曲的主观响度完全一致。
+- 手机横屏、竖屏及 TV 播放页新增音量图标入口，设置与播放页共用声音面板；TV 支持遥控器按 5% 调节。
+- 手机局域网控制页面支持设置音量百分比和统一响度。
+- 为确保均衡生效，使用软件 PCM 音频链路，停用音频硬件卸载与编码直通；均衡开关即时生效。
+
+### 本版发布方式
+
+- 按用户要求，不运行单元测试、类型检查、lint 或实机验证；直接通过 Actions 编译并发布手机和 TV 安装包，由用户自行验证。
+
 ## [1.10.14](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.13...v1.10.14) - 2026-10-25
 
 ### 独立 TV 版

@@ -4,6 +4,7 @@ import initTheme from './theme'
 import initI18n from './i18n'
 import initUserApi from './userApi'
 import initPlayer from './player'
+import initAudioOutput from './audioOutput'
 import initTVRemote from './tvRemote'
 import initLanRemote from './lanRemote'
 import dataInit from './dataInit'
@@ -53,6 +54,7 @@ export default async() => {
   setApiSource(setting['common.apiSource'])
   bootLog('Api inited.')
 
+  await initAudioOutput(setting)
   registerPlaybackService()
   bootLog('Playback Service Registered.')
   await initPlayer(setting)

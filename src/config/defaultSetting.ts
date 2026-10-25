@@ -22,6 +22,7 @@ const defaultSetting: LX.AppSetting = {
   'player.playQuality': '128k',
   'player.isSavePlayTime': false,
   'player.volume': 1,
+  'player.loudnessNormalize': true,
   'player.playbackRate': 1,
   'player.cacheSize': '1024',
   'player.timeoutExit': '',

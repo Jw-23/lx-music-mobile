@@ -1,4 +1,6 @@
 export const remoteSettings = [
+  { key: 'player.loudnessNormalize', label: '统一响度', type: 'boolean' },
+  { key: 'player.volume', label: '播放器音量（%）', type: 'number', min: 0, max: 1 },
   { key: 'player.startupAutoPlay', label: '启动后自动播放', type: 'boolean' },
   { key: 'player.startupPushPlayDetailScreen', label: '启动后进入播放页', type: 'boolean' },
   { key: 'common.autoHidePlayBar', label: '输入时隐藏播放栏', type: 'boolean' },

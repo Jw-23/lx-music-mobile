@@ -168,7 +168,7 @@ export const setLoop = async(loop: boolean) => TrackPlayer.setRepeatMode(loop ? 
 export const setPause = async() => TrackPlayer.pause()
 // export const skipToNext = () => TrackPlayer.skipToNext()
 export const setCurrentTime = async(time: number) => TrackPlayer.seekTo(time)
-export const setVolume = async(num: number) => TrackPlayer.setVolume(num)
+export const setVolume = async(num: number) => TrackPlayer.setVolume(Number.isFinite(num) ? Math.max(0, Math.min(1, num)) : 1)
 export const setPlaybackRate = async(num: number) => TrackPlayer.setRate(num)
 export interface NowPlayingTitles {
   title?: string

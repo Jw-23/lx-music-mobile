@@ -88,14 +88,14 @@ function renderSettings() {
     const input = node(setting.type === 'select' ? 'select' : 'input'); input.id = id
     if (setting.type === 'boolean') { input.type = 'checkbox'; input.checked = setting.value } else {
       if (setting.options) for (const [value, text] of setting.options) { const option = node('option', text); option.value = value; input.append(option) }
-      else { input.type = 'number'; input.min = setting.min; input.max = setting.max; input.step = '10' }
-      input.value = setting.value
+      else { input.type = 'number'; input.min = setting.min; input.max = setting.key === 'player.volume' ? 100 : setting.max; input.step = setting.key === 'player.volume' ? '1' : '10' }
+      input.value = setting.key === 'player.volume' ? Math.round(setting.value * 100) : setting.value
     }
     input.addEventListener('change', async() => {
-      const value = setting.type === 'boolean' ? input.checked : setting.type === 'number' ? Number(input.value) : input.value
+      const value = setting.type === 'boolean' ? input.checked : setting.type === 'number' ? Number(input.value) / (setting.key === 'player.volume' ? 100 : 1) : input.value
       input.disabled = true
       try { state = await command('settings.set', { key: setting.key, value }); setting.value = value; toast('已保存到电视') } catch (error) {
-        if (setting.type === 'boolean') input.checked = setting.value; else input.value = setting.value
+        if (setting.type === 'boolean') input.checked = setting.value; else input.value = setting.key === 'player.volume' ? Math.round(setting.value * 100) : setting.value
         toast(error.message)
       } finally { input.disabled = false }
     })

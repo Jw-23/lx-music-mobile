@@ -137,6 +137,9 @@ declare global {
        */
       'player.volume': number
 
+      /** Reduce loudness differences between tracks on Android. */
+      'player.loudnessNormalize': boolean
+
       /**
        * 播放速率
        */

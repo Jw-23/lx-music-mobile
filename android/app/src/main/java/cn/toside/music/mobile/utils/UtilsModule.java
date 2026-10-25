@@ -60,6 +60,12 @@ public class UtilsModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
+  public void setLoudnessNormalization(boolean enabled, Promise promise) {
+    com.guichaguri.trackplayer.audio.LoudnessSettings.setEnabled(reactContext, enabled);
+    promise.resolve(null);
+  }
+
+  @ReactMethod
   public void setTVMode(boolean enabled) {
     reactContext.runOnUiQueueThread(() -> {
       cn.toside.music.mobile.tv.TvRemote.setEnabled(enabled);

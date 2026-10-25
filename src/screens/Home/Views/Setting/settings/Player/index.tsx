@@ -4,7 +4,7 @@ import Section from '../../components/Section'
 import IsSavePlayTime from './IsSavePlayTime'
 import PlayHighQuality from './PlayHighQuality'
 import IsHandleAudioFocus from './IsHandleAudioFocus'
-import IsEnableAudioOffload from './IsEnableAudioOffload'
+import AudioOutput from '@/components/player/AudioOutput'
 import IsAutoCleanPlayedList from './IsAutoCleanPlayedList'
 import IsShowBluetoothLyric from './IsShowBluetoothLyric'
 import IsShowBluetoothFullLyric from './IsShowBluetoothFullLyric'
@@ -24,7 +24,7 @@ export default memo(() => {
       <IsSavePlayTime />
       <IsAutoCleanPlayedList />
       <IsHandleAudioFocus />
-      <IsEnableAudioOffload />
+      <AudioOutput />
       <IsShowBluetoothLyric />
       <IsShowBluetoothFullLyric />
       <IsShowNotificationImage />
