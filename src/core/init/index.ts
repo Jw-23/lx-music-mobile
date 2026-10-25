@@ -4,6 +4,7 @@ import initTheme from './theme'
 import initI18n from './i18n'
 import initUserApi from './userApi'
 import initPlayer from './player'
+import initTVRemote from './tvRemote'
 import dataInit from './dataInit'
 import initSync from './sync'
 import initCommonState from './common'
@@ -55,6 +56,7 @@ export default async() => {
   bootLog('Playback Service Registered.')
   await initPlayer(setting)
   bootLog('Player inited.')
+  initTVRemote()
   await dataInit(setting)
   bootLog('Data inited.')
   await initCommonState(setting)

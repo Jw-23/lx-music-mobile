@@ -52,7 +52,7 @@ export default memo(({ componentId }: { componentId: string }) => {
   }, [])
 
   return (
-    <PageContent>
+    <PageContent tvInsets={false}>
       <StatusBar />
       <View style={{ ...styles.container, paddingTop: statusBarHeight }}>
         <View style={styles.left}>

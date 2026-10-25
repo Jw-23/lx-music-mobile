@@ -6,6 +6,20 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.10.12](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.11...v1.10.12) - 2026-10-25
+
+### Android TV
+
+- 增加电视桌面入口、横幅、横屏侧栏和安全边距；提供手动电视模式，兼容未自动识别的安卓盒子。
+- 原生焦点框与方向键导航覆盖页面、弹窗和队列，隐藏页面无法获得焦点，详情返回恢复位置。
+- 媒体按键只在松开时执行一次；播放页提供 10 秒快进/快退，底部可直接查看队列。
+- 队列手柄支持确认进入调整、上下调序、确认或返回结束，同时保留触屏拖动。
+
+### 验证
+
+- 132 项单元测试、全项目类型检查、lint、差异格式检查和 Android 原生 Java 编译通过。
+- 尚未进行实体电视遥控器测试；操作说明见 [Android TV 使用说明](doc/android-tv.md)。
+
 ## [1.10.11](https://github.com/Jw-23/lx-music-mobile/compare/v1.10.10...v1.10.11) - 2026-10-18
 
 ### 修复

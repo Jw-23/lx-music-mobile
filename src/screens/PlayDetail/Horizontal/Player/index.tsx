@@ -5,6 +5,7 @@ import { View } from 'react-native'
 import { createStyle } from '@/utils/tools'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import PlayInfo from './PlayInfo'
+import TVSeekControls from '@/components/player/TVSeekControls'
 import ControlBtn from './ControlBtn'
 import { marginLeftRaw } from '../constant'
 
@@ -14,6 +15,7 @@ export default memo(() => {
     <View style={styles.container} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_player}>
       <ControlBtn />
       <PlayInfo />
+      <TVSeekControls />
     </View>
   )
 })

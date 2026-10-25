@@ -51,6 +51,23 @@ public class UtilsModule extends ReactContextBaseJavaModule {
     return "UtilsModule";
   }
 
+  @Override
+  public java.util.Map<String, Object> getConstants() {
+    return java.util.Collections.<String, Object>singletonMap("isTV", cn.toside.music.mobile.tv.TvRemote.isDeviceTV(reactContext));
+  }
+
+  @ReactMethod
+  public void setTVMode(boolean enabled) {
+    reactContext.runOnUiQueueThread(() -> {
+      cn.toside.music.mobile.tv.TvRemote.setEnabled(enabled);
+      android.app.Activity activity = getCurrentActivity();
+      if (activity != null) {
+        if (enabled) cn.toside.music.mobile.tv.TvFocusOutline.install(activity.getWindow().getDecorView());
+        activity.getWindow().getDecorView().invalidate();
+      }
+    });
+  }
+
   @ReactMethod
   public void addListener(String eventName) {
     if (listenerCount == 0) {

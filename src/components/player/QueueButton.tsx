@@ -15,9 +15,11 @@ import playerState from '@/store/player/state'
 import playerActions from '@/store/player/action'
 import { usePlayInfo, usePlayMusicInfo } from '@/store/player/hook'
 import { useSettingValue } from '@/store/setting/hook'
+import useTVMode from '@/utils/hooks/useTVMode'
 import { toast } from '@/utils/tools'
 
 export default () => {
+  const tv = useTVMode()
   const dialog = useRef<DialogType>(null)
   const colors = useDesignColors()
   const t = useI18n()
@@ -47,12 +49,18 @@ export default () => {
   const songs = getList(listId)
   const pending = playerState.tempPlayList
   const upcoming = getUpcomingPlayback().songs
-  const rows = upcoming.map((info, index) => ({
-    info,
-    pending: index < pending.length,
-    index: index < pending.length ? index : songs.findIndex(song => song.id === info.musicInfo.id),
-    key: `${index < pending.length ? 'pending' : 'queue'}_${info.listId}_${info.musicInfo.id}_${index < pending.length ? index : ''}`,
-  })).filter((row, index) => row.pending || row.info.musicInfo.id !== songs[playInfo.playerPlayIndex]?.id || (index === pending.length && upcoming.length === pending.length + 1))
+  const occurrences = new Map<string, number>()
+  const rows = upcoming.map((info, index) => {
+    const identity = `${index < pending.length ? 'pending' : 'queue'}_${info.listId}_${info.musicInfo.id}`
+    const occurrence = occurrences.get(identity) ?? 0
+    occurrences.set(identity, occurrence + 1)
+    return ({
+      info,
+      pending: index < pending.length,
+      index: index < pending.length ? index : songs.findIndex(song => song.id === info.musicInfo.id),
+      key: `${identity}_${occurrence}`,
+    })
+  }).filter((row, index) => row.pending || row.info.musicInfo.id !== songs[playInfo.playerPlayIndex]?.id || (index === pending.length && upcoming.length === pending.length + 1))
   const revisionKey = JSON.stringify([dismissed, listId, mode, current.musicInfo?.id, current.isTempPlay, rows.map(row => row.key)])
   // History and cached random choices must not override an explicit queue edit.
   const edit = (change: () => void, resetSequence = false) => {
@@ -70,7 +78,7 @@ export default () => {
       <Icon name="list-order" size={22} color={colors.accent} />
     </Pressable>
     <Dialog ref={dialog} onHide={() => { setDismissed(value => value + 1) }} title={t('library_queue')} height="80%">
-      <Text size={13} color={colors.secondary} style={styles.hint}>{t('library_queue_hint')}</Text>
+      <Text size={13} color={colors.secondary} style={styles.hint}>{t(tv ? 'tv_queue_hint' : 'library_queue_hint')}</Text>
       {current.musicInfo ? <View style={[styles.hint, { backgroundColor: colors.secondarySurface }]}><Text size={12} color={colors.accent}>{t('library_now_playing')}</Text><Text size={17} numberOfLines={1}>{'progress' in current.musicInfo ? current.musicInfo.metadata.musicInfo.name : current.musicInfo.name}</Text></View> : null}
       <DragSortList data={rows} rowHeight={rowHeight} revisionKey={revisionKey} keyExtractor={row => row.key}
         empty={<Text color={colors.secondary} style={styles.hint}>{t('library_queue_empty')}</Text>}
@@ -105,7 +113,7 @@ export default () => {
                 else if (listId) removeQueueSong(listId, songs, row.info.musicInfo.id, current.isTempPlay ? undefined : current.musicInfo?.id)
               })
             }}><Text size={22} color={colors.secondary}>−</Text></Pressable>
-            <View {...handle} style={styles.action} accessible accessibilityLabel={`${t('library_queue_drag')} ${music.name}`} accessibilityHint={t('library_queue_hint')}>
+            <View {...handle} nativeID={tv ? `tv-adjust:queue:${row.key}` : undefined} focusable={tv} style={styles.action} accessible accessibilityLabel={`${t('library_queue_drag')} ${music.name}`} accessibilityHint={t(tv ? 'tv_queue_hint' : 'library_queue_hint')}>
               <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.grip}>{[0, 1, 2].map(line => <View key={line} style={[styles.gripLine, { backgroundColor: colors.secondary }]} />)}</View>
             </View>
           </View>

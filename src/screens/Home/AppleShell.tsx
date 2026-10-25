@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { setNavActiveId } from '@/core/common'
@@ -10,10 +10,13 @@ import Text from '@/components/common/Text'
 import StatusBar from '@/components/common/StatusBar'
 import PlayerBar from '@/components/player/PlayerBar'
 import Main from './Vertical/Main'
+import useTVMode from '@/utils/hooks/useTVMode'
 import { HOME_TABS as tabs } from '@/config/homeTabs'
 
 export default () => {
   const active = useNavActiveId()
+  const initial = useRef(active).current
+  const tv = useTVMode()
   const colors = useDesignColors()
   const wide = useHorizontalMode()
   const statusHeight = useStatusbarHeight()
@@ -30,7 +33,7 @@ export default () => {
       {wide ? <Text size={24} style={styles.brand}>LX Music</Text> : null}
       {tabs.map(tab => {
         const selected = active === tab.id
-        return <Pressable key={tab.id} onPress={() => { setNavActiveId(tab.id) }} accessibilityRole="tab" accessibilityLabel={t(tab.title)} accessibilityState={{ selected }} style={[wide ? styles.sidebarItem : styles.tab, wide && selected ? { backgroundColor: colors.secondarySurface } : null]}>
+        return <Pressable key={tab.id} onPress={() => { setNavActiveId(tab.id) }} hasTVPreferredFocus={tv && tab.id === initial} accessibilityRole="tab" accessibilityLabel={t(tab.title)} accessibilityState={{ selected }} style={[wide ? styles.sidebarItem : styles.tab, tv && { minHeight: 60 }, wide && selected ? { backgroundColor: colors.secondarySurface } : null]}>
           <Icon name={tab.icon} size={wide ? 22 : 23} color={selected ? colors.accent : colors.secondary} />
           <Text size={wide ? 17 : 10} color={selected ? colors.accent : colors.secondary} style={wide ? styles.sidebarLabel : styles.tabLabel}>{t(tab.title)}</Text>
         </Pressable>
@@ -38,7 +41,7 @@ export default () => {
     </>
   )
   const navigation = wide
-    ? <ScrollView style={[styles.sidebar, { backgroundColor: colors.surface, borderColor: colors.separator }]} contentContainerStyle={{ padding: 16 }}>{navigationContent}</ScrollView>
+    ? <ScrollView style={[styles.sidebar, tv && { width: 224 }, { backgroundColor: colors.surface, borderColor: colors.separator }]} contentContainerStyle={{ padding: 16 }}>{navigationContent}</ScrollView>
     : <View style={[styles.tabs, { backgroundColor: colors.surface, borderColor: colors.separator }]}>{navigationContent}</View>
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface, paddingTop: Platform.OS === 'android' ? statusHeight : 0 }]}>

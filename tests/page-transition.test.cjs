@@ -35,7 +35,7 @@ function harness(file, imports = {}, globals = {}) {
   const jsx = (type, props, key) => ({ type, props, key })
   const animate = (value, config, children) => ({ value, config, children, stopped: false, start(done) { this.done = done; running.push(this) }, stop() { this.stopped = true }, finish() { if (this.value) this.value.setValue(this.config.toValue); this.children?.forEach(child => child.value.setValue(child.config.toValue)); this.done?.({ finished: true }) } })
   const native = {
-    View: 'View', TouchableOpacity: 'TouchableOpacity', FlatList: 'FlatList', TextInput: 'TextInput', SafeAreaView: 'SafeAreaView', Platform: { OS: 'android' }, ScrollView: 'ScrollView', Pressable: 'Pressable', ActivityIndicator: 'Spinner', Keyboard: { dismiss() {} },
+    requireNativeComponent: name => 'Native:' + name, View: 'View', TouchableOpacity: 'TouchableOpacity', FlatList: 'FlatList', TextInput: 'TextInput', SafeAreaView: 'SafeAreaView', Platform: { OS: 'android' }, ScrollView: 'ScrollView', Pressable: 'Pressable', ActivityIndicator: 'Spinner', Keyboard: { dismiss() {} },
     StyleSheet: { create: value => value, absoluteFill: {} }, useWindowDimensions: () => ({ width }),
     Easing: { cubic: 'cubic', out: value => value, bezier: (...args) => args },
     Animated: { View: 'AnimatedView', Value: class { constructor(value) { this.value = value } setValue(value) { this.value = value } interpolate(config) { return { value: this, config } } }, spring: (value, config) => animate(value, config), timing: (value, config) => animate(value, config), parallel: children => animate(null, null, children) },
@@ -44,7 +44,7 @@ function harness(file, imports = {}, globals = {}) {
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021, jsx: ts.JsxEmit.ReactJSX } })
   const exports = {}
   vm.runInNewContext(outputText, { exports, console, ...globals, require(name) {
-    const available = { react, 'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': native, '@/utils/hooks/useReducedMotion': { default: () => reduced }, '@/config/homeTabs': navigation, '../HomePageHeader': { default: 'HomePageHeader' }, '../pagerScroll': { HomePagerScrollContext: { Provider: 'PagerProvider' } }, '@/theme/design': { design: { type: { largeTitle: 34 } }, useDesignColors: () => ({ background: 'white', accent: 'red', secondarySurface: 'gray' }) }, ...imports }
+    const available = { '@/utils/hooks/useTVMode': { default: () => false }, './TVFocusScope': { default: 'TVFocusScope' }, '@/components/common/TVFocusScope': { default: 'TVFocusScope' }, '@/store/common/hook': { useNavActiveId: () => imports['@/store/common/state']?.default.navActiveId ?? 'nav_love' }, react, 'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': native, '@/utils/hooks/useReducedMotion': { default: () => reduced }, '@/config/homeTabs': navigation, '../HomePageHeader': { default: 'HomePageHeader' }, '../pagerScroll': { HomePagerScrollContext: { Provider: 'PagerProvider' } }, '@/theme/design': { design: { type: { largeTitle: 34 } }, useDesignColors: () => ({ background: 'white', accent: 'red', secondarySurface: 'gray' }) }, ...imports }
     if (!(name in available)) throw new Error(`Unexpected import ${name}`)
     return available[name]
   } }, { filename: file })
@@ -86,20 +86,20 @@ test('settings push and pop retain both levels until completion and expose only 
   const root = { type: 'SettingsList', props: { scrollOffset: 300 } }; const detail = { type: 'BasicSettings' }
   const h = harness('src/components/common/StackTransition.tsx')
   h.render({ children: root, detail: null }); h.running.at(-1).finish()
-  h.render({ detailKey: 'basic', detail }); assert.equal(h.tree().props.children[0].props.children, root)
-  assert.equal(h.tree().props.children[0].props.pointerEvents, 'none'); assert.equal(h.tree().props.children[0].props.importantForAccessibility, 'no-hide-descendants')
-  assert.equal(h.tree().props.children[1].props.children, detail); h.running.at(-1).finish()
+  h.render({ detailKey: 'basic', detail }); assert.equal(h.tree().props.children[0].props.children.props.children, root)
+  assert.equal(h.tree().props.children[0].props.children.props.blocked, true); assert.equal(h.tree().props.children[0].props.pointerEvents, 'none'); assert.equal(h.tree().props.children[0].props.importantForAccessibility, 'no-hide-descendants')
+  assert.equal(h.tree().props.children[1].props.children.props.children, detail); h.running.at(-1).finish()
   h.render({ detailKey: undefined, detail: null })
-  assert.equal(h.tree().props.children[1].props.children, detail); assert.equal(h.tree().props.children[1].props.pointerEvents, 'none')
+  assert.equal(h.tree().props.children[1].props.children.props.children, detail); assert.equal(h.tree().props.children[1].props.pointerEvents, 'none')
   h.running.at(-1).finish(); h.render()
-  assert.equal(h.tree().props.children[1], null); assert.equal(h.tree().props.children[0].props.pointerEvents, 'auto'); assert.equal(h.tree().props.children[0].props.children, root)
+  assert.equal(h.tree().props.children[1], null); assert.equal(h.tree().props.children[0].props.pointerEvents, 'auto'); assert.equal(h.tree().props.children[0].props.children.props.children, root)
 })
 test('an interrupted settings pop cannot hide a newer detail or clear it after unmount', () => {
   const h = harness('src/components/common/StackTransition.tsx')
   h.render({ children: 'root', detailKey: 'basic', detail: 'basic' }); h.running.at(-1).finish()
   h.render({ detailKey: undefined, detail: null }); const pop = h.running.at(-1)
   h.render({ detailKey: 'player', detail: 'player' }); pop.finish(); h.render()
-  assert.equal(pop.stopped, true); assert.equal(h.tree().props.children[1].props.children, 'player')
+  assert.equal(pop.stopped, true); assert.equal(h.tree().props.children[1].props.children.props.children, 'player')
   h.render({ detailKey: undefined, detail: null }); const last = h.running.at(-1); h.cleanup(); last.finish(); h.render()
   assert.ok(h.tree().props.children[1]); assert.equal(last.stopped, true)
 })
@@ -110,18 +110,18 @@ test('reduced motion completes settings navigation immediately; rotation updates
   assert.equal(h.tree().props.children[1].props.style[1].transform[0].translateX.config.outputRange[0], 844)
   h.render({ detailKey: undefined, detail: null }); assert.equal(h.tree().props.children[1], null)
 })
-function home(initial = 'nav_love') {
+function home(initial = 'nav_love', tv = false) {
   const event = new EventEmitter(); const state = { navActiveId: initial }; const calls = []; const scroll = []
   const settings = { 'common.homePageScroll': true }; const lx = { homePagerIdle: true }
   const setNavActiveId = id => { if (state.navActiveId !== id) { state.navActiveId = id; event.emit('navActiveIdUpdated', id) } }
   const h = harness('src/screens/Home/Vertical/Main.tsx', {
     '../Views/Search': { default: 'Search' }, '../Views/SongList': { default: 'SongList' }, '../Views/Mylist': { default: 'Mylist' }, '../Views/Leaderboard': { default: 'Leaderboard' }, '../Views/Setting': { default: 'Setting' },
     '@/store/common/state': { default: state }, '@/store/setting/state': { default: { setting: settings } },
-    '@/utils/tools': { createStyle: value => value }, 'react-native-pager-view': { default: 'Pager' }, '@/core/common': { setNavActiveId }, '@/components/common/PageTransition': { default: 'PageTransition' },
+    '@/utils/tools': { createStyle: value => value }, 'react-native-pager-view': { default: 'Pager' }, '@/core/common': { setNavActiveId }, '@/store/common/hook': { useNavActiveId: () => state.navActiveId }, '@/utils/hooks/useTVMode': { default: () => tv }, '@/components/common/PageTransition': { default: 'PageTransition' },
   }, { global: { state_event: event, lx } })
   const pager = () => nodes(h.tree()).find(node => node.type === 'Pager')
   const controls = { setPage: index => calls.push({ index, animated: true }), setPageWithoutAnimation: index => calls.push({ index, animated: false }), setScrollEnabled: value => scroll.push(value) }
-  h.render(); pager().props.ref.current = controls
+  h.render(); h.mount(h.tree().type); if (pager()) pager().props.ref.current = controls
   return { ...h, event, state, settings, calls, scroll, pager, lx,
     select: index => { pager().props.onPageSelected({ nativeEvent: { position: index } }); h.render() },
     tap: id => { setNavActiveId(id); h.render() },
@@ -298,4 +298,40 @@ test('dark playlist rows keep readable metadata and usable actions even when the
   assert.equal(text[0].props.color, colors.text); assert.equal(text[1].props.color, colors.secondary); assert.equal(text[2].props.color, colors.secondary)
   nodes(h.tree()).find(node => node.props?.accessibilityLabel === 'library_add Title').props.onPress(); assert.equal(additions, 1)
   supported = true; h.render({ activeIndex: 0 }); assert.equal(nodes(h.tree()).find(node => node.type === 'Text').props.color, colors.accent)
+})
+
+test('TV navigation never mounts a swipe pager and excludes cached inactive scenes from native focus', () => {
+  const h = home('nav_love', true)
+  assert.equal(h.pager(), undefined)
+  const scopes = () => nodes(h.tree()).filter(node => node.type === 'TVFocusScope')
+  assert.equal(scopes().length, 1); assert.equal(scopes()[0].key, 'nav_love'); assert.equal(scopes()[0].props.blocked, false)
+  h.tap('nav_search'); assert.equal(scopes().length, 2)
+  assert.equal(scopes().find(node => node.key === 'nav_love').props.blocked, true)
+  assert.equal(scopes().find(node => node.key === 'nav_search').props.blocked, false)
+  h.tap('nav_love'); assert.equal(scopes().length, 2); assert.equal(scopes().find(node => node.key === 'nav_search').props.blocked, true)
+  h.cleanup()
+})
+test('focus scopes use the native descendant gate and autofocus on TV, preserving a plain view on phones', () => {
+  let tv = false
+  const h = harness('src/components/common/TVFocusScope.tsx', { '@/utils/hooks/useTVMode': { default: () => tv } })
+  const ref = { current: null }
+  h.render({ blocked: true, autoFocus: true, children: 'content' }, ref)
+  assert.equal(h.tree().type, 'View'); assert.equal(h.tree().props.blocked, undefined)
+  tv = true; h.render({}, ref)
+  assert.equal(h.tree().type, 'Native:LXTVFocusScope'); assert.equal(h.tree().props.blocked, true); assert.equal(h.tree().props.autoFocus, true)
+  h.render({ blocked: false }, ref); assert.equal(h.tree().props.blocked, false)
+})
+test('TV modals autofocus their content, skip the full-screen backdrop and block focus during exit', () => {
+  for (const tv of [true, false]) {
+    const h = harness('src/components/common/AnimatedModal.tsx', {
+      '@/utils/hooks/useTVMode': { default: () => tv }, './modalTransition': pure('src/components/common/modalTransition.ts'),
+    })
+    h.render({ visible: true, children: 'dialog', onBackgroundPress() {} })
+    const scope = () => nodes(h.tree()).find(node => node.type === 'TVFocusScope')
+    assert.equal(scope().props.autoFocus, true); assert.equal(scope().props.blocked, false)
+    assert.equal(nodes(h.tree()).find(node => node.type === 'Pressable').props.focusable, tv ? false : undefined)
+    h.tree().props.onShow({}); h.render({ visible: false })
+    assert.equal(scope().props.blocked, true); assert.equal(h.tree().props.visible, true)
+    h.cleanup()
+  }
 })

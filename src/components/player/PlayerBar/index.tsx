@@ -15,9 +15,12 @@ import Image from '@/components/common/Image'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { toast } from '@/utils/tools'
+import useTVMode from '@/utils/hooks/useTVMode'
+import QueueButton from '@/components/player/QueueButton'
 
 export default memo(({ isHome = false }: { isHome?: boolean }) => {
   const { keyboardShown } = useKeyboard()
+  const tv = useTVMode()
   const colors = useDesignColors()
   const t = useI18n()
   const music = usePlayerMusicInfo()
@@ -50,6 +53,7 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
       <Pressable disabled={!music.id} onPress={async() => { try { await playPrev() } catch { toast(t('library_play_failed')) } }} style={styles.button} accessibilityRole="button" accessibilityLabel={t('library_previous')} accessibilityState={{ disabled: !music.id }}><Icon name="prevMusic" size={24} color={colors.text} /></Pressable>
       <Pressable disabled={!music.id} onPress={togglePlay} style={styles.button} accessibilityRole="button" accessibilityLabel={t(isPlay ? 'player_pause' : 'library_play')} accessibilityState={{ disabled: !music.id }}><Icon name={isPlay ? 'pause' : 'play'} size={23} color={colors.text} /></Pressable>
       <Pressable disabled={!music.id} onPress={async() => { try { await playNext() } catch { toast(t('library_play_failed')) } }} style={styles.button} accessibilityRole="button" accessibilityLabel={t('library_next')} accessibilityState={{ disabled: !music.id }}><Icon name="nextMusic" size={24} color={colors.text} /></Pressable>
+      {tv ? <QueueButton /> : null}
     </View>
     <Pressable disabled={!seek || !music.id || maxPlayTime <= 0} accessibilityRole={seek ? 'adjustable' : 'progressbar'} accessibilityLabel={t('library_playback_progress')} accessibilityValue={{ min: 0, max: 100, now: Math.round((Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0) * 100) }} accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]} onAccessibilityAction={({ nativeEvent }) => { if (seek && maxPlayTime > 0) global.app_event.setProgress(Math.max(0, Math.min(maxPlayTime, progress * maxPlayTime + (nativeEvent.actionName === 'increment' ? 10 : -10)))) }} onLayout={({ nativeEvent }) => { setTrackWidth(nativeEvent.layout.width) }} onPress={({ nativeEvent }) => { if (trackWidth > 0) global.app_event.setProgress(Math.max(0, Math.min(1, nativeEvent.locationX / trackWidth)) * maxPlayTime) }} style={{ marginHorizontal: 14, minHeight: seek ? 44 : 2, justifyContent: 'center' }}>
       {seek ? <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}><Text size={11} color={colors.secondary}>{nowPlayTimeStr}</Text><Text size={11} color={colors.secondary}>{maxPlayTimeStr}</Text></View> : null}

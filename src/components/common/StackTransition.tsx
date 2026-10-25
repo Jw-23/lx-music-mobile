@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native'
 import useReducedMotion from '@/utils/hooks/useReducedMotion'
+import TVFocusScope from './TVFocusScope'
 import { useDesignColors } from '@/theme/design'
 
 // Retain both levels through a pop so the settings list keeps its scroll position.
@@ -34,8 +35,8 @@ export default ({ detailKey, detail, onVisibleChange, children }: {
   }, [detailKey, reduced, progress])
   const interpolate = (from: number, to: number) => progress.interpolate({ inputRange: [0, 1], outputRange: [from, to], extrapolate: 'clamp' })
   return <View style={styles.container}>
-    <Animated.View pointerEvents={presented ? 'none' : 'auto'} accessibilityElementsHidden={presented} importantForAccessibility={presented ? 'no-hide-descendants' : 'auto'} style={[styles.container, { transform: [{ translateX: interpolate(0, -Math.min(width * 0.2, 64)) }] }]}>{children}</Animated.View>
-    {presented ? <Animated.View pointerEvents={detailKey ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, transform: [{ translateX: interpolate(width, 0) }] }]}>{lastDetail.current}</Animated.View> : null}
+    <Animated.View pointerEvents={presented ? 'none' : 'auto'} accessibilityElementsHidden={presented} importantForAccessibility={presented ? 'no-hide-descendants' : 'auto'} style={[styles.container, { transform: [{ translateX: interpolate(0, -Math.min(width * 0.2, 64)) }] }]}><TVFocusScope blocked={presented} style={styles.container}>{children}</TVFocusScope></Animated.View>
+    {presented ? <Animated.View pointerEvents={detailKey ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, transform: [{ translateX: interpolate(width, 0) }] }]}><TVFocusScope blocked={!detailKey} autoFocus style={styles.container}>{lastDetail.current}</TVFocusScope></Animated.View> : null}
   </View>
 }
 const styles = StyleSheet.create({ container: { flex: 1, overflow: 'hidden' } })

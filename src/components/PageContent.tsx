@@ -1,9 +1,11 @@
 // import { useEffect, useState } from 'react'
-import { View } from 'react-native'
+import { View, NativeModules } from 'react-native'
 import { useTheme } from '@/store/theme/hook'
 import ImageBackground from '@/components/common/ImageBackground'
 import { useWindowSize } from '@/utils/hooks'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
+import useTVMode from '@/utils/hooks/useTVMode'
+import TVFocusScope from './common/TVFocusScope'
 import { scaleSizeAbsHR } from '@/utils/pixelRatio'
 import { defaultHeaders } from './common/Image'
 import SizeView from './SizeView'
@@ -11,12 +13,15 @@ import { useBgPic } from '@/store/common/hook'
 
 interface Props {
   children: React.ReactNode
+  tvInsets?: boolean
 }
 
 const BLUR_RADIUS = Math.max(scaleSizeAbsHR(18), 10)
 
-export default ({ children }: Props) => {
+export default ({ children, tvInsets = true }: Props) => {
   const theme = useTheme()
+  const tv = useTVMode()
+  useEffect(() => { NativeModules.UtilsModule?.setTVMode?.(tv) }, [tv])
   const windowSize = useWindowSize()
   const pic = useBgPic()
   // const [wh, setWH] = useState<{ width: number | string, height: number | string }>({ width: '100%', height: Dimensions.get('screen').height })
@@ -73,7 +78,7 @@ export default ({ children }: Props) => {
   return (
     <>
       <SizeView />
-      {pic ? picComponent : themeComponent}
+      <TVFocusScope style={{ flex: 1, paddingHorizontal: tv && tvInsets ? 32 : 0, paddingVertical: tv && tvInsets ? 20 : 0 }}>{pic ? picComponent : themeComponent}</TVFocusScope>
     </>
   )
 }

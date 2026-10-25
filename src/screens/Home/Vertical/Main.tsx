@@ -13,6 +13,9 @@ import settingState from '@/store/setting/state'
 import PageTransition from '@/components/common/PageTransition'
 import useReducedMotion from '@/utils/hooks/useReducedMotion'
 import HomePageHeader from '../HomePageHeader'
+import TVFocusScope from '@/components/common/TVFocusScope'
+import useTVMode from '@/utils/hooks/useTVMode'
+import { useNavActiveId } from '@/store/common/hook'
 import { HomePagerScrollContext } from '../pagerScroll'
 import { HOME_TAB_IDS as HOME_PAGE_IDS, HOME_TAB_INDEX as homePageIndex, isHomePageNearby, type HomeTabId } from '@/config/homeTabs'
 
@@ -40,7 +43,7 @@ const HomePage = ({ id }: { id: HomeTabId }) => {
   return visible ? <View style={styles.page}><HomePageHeader id={id} /><Screen /></View> : null
 }
 
-export default () => {
+const TouchMain = () => {
   const [transition, setTransition] = useState({ key: String(commonState.navActiveId), direction: 1, enabled: true })
   const [scrollEnabled, setScrollEnabled] = useState(settingState.setting['common.homePageScroll'])
   const locks = useRef(new Set<HomeTabId>())
@@ -112,3 +115,18 @@ export default () => {
   </PageTransition>
 }
 const styles = createStyle({ page: { flex: 1, overflow: 'hidden' } })
+
+const TVMain = () => {
+  const active = useNavActiveId()
+  const visited = useRef(new Set<HomeTabId>())
+  visited.current.add(active)
+  return <PageTransition transitionKey={active} direction={1}>
+    {HOME_PAGE_IDS.filter(id => visited.current.has(id)).map(id => {
+      const Screen = screens[id]
+      return <TVFocusScope key={id} blocked={id !== active} style={[styles.page, id !== active && { display: 'none' }]}>
+        <HomePageHeader id={id} /><Screen />
+      </TVFocusScope>
+    })}
+  </PageTransition>
+}
+export default () => useTVMode() ? <TVMain /> : <TouchMain />

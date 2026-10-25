@@ -786,7 +786,7 @@ test('a stale reorder cannot insert a deleted song, repeat the playing anchor or
   assert.deepEqual(ids(p.playInfo.getList('saved')), ids(p.songs))
 })
 
-function queueScreen(p) {
+function queueScreen(p, tv = false) {
   const jsx = (type, props) => ({ type, props })
   const view = load('src/components/player/QueueButton.tsx', {
     react: { useRef: value => ({ current: value }), useState: value => [value, () => {}], useEffect() {} },
@@ -802,7 +802,7 @@ function queueScreen(p) {
       moveTempPlayList: (from, to) => p.state.tempPlayList.splice(to, 0, p.state.tempPlayList.splice(from, 1)[0]),
     } },
     '@/store/player/hook': { usePlayInfo: () => p.state.playInfo, usePlayMusicInfo: () => p.state.playMusicInfo },
-    '@/store/setting/hook': { useSettingValue: () => p.settings.setting['player.togglePlayMethod'] }, '@/utils/tools': {},
+    '@/store/setting/hook': { useSettingValue: () => p.settings.setting['player.togglePlayMethod'] }, '@/utils/hooks/useTVMode': { default: () => tv }, '@/utils/tools': {},
   }).default()
   return view.props.children[1].props.children.find(child => child?.type === 'DragSortList').props
 }
@@ -827,4 +827,18 @@ test('dragging the normal rows while a priority song plays preserves its anchor 
     await p.player.playNext(true)
     assert.equal(p.state.playMusicInfo.musicInfo.id, expected)
   }
+})
+
+test('TV queue adjustment preserves row identity while moving and supports the same reorder action as dragging', () => {
+  const p = playback()
+  p.state.tempPlayList = [{ listId: 'saved', musicInfo: song('priority-a') }, { listId: 'saved', musicInfo: song('priority-b') }]
+  const screen = queueScreen(p, true)
+  const row = screen.data.find(row => row.info.musicInfo.id === 'priority-a')
+  const rendered = screen.renderRow(row, false, { accessibilityRole: 'adjustable' })
+  const handle = rendered.props.children.at(-1)
+  assert.equal(handle.props.focusable, true); assert.ok(handle.props.nativeID.startsWith('tv-adjust:queue:'))
+  screen.onMove(0, 1)
+  const next = queueScreen(p, true).data.find(row => row.info.musicInfo.id === 'priority-a')
+  assert.equal(next.key, row.key)
+  assert.equal(p.state.tempPlayList[1].musicInfo.id, 'priority-a')
 })
